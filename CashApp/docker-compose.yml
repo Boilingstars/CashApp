@@ -46,6 +46,7 @@ services:
       volumes:
         - ./nginx/conf.d:/etc/nginx/conf.d:ro
         - /etc/letsencrypt/archive/cashapps.ru:/etc/nginx/ssl:ro
+        - ./certbot/www:/var/www/certbot:ro
         - static_volume:/static:ro
         - media_volume:/media:ro
       depends_on:
