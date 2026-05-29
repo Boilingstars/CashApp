@@ -1,0 +1,10 @@
+psycopg2
+django-unfold
+pyjwt
+django-environ
+Django~=5.2.11
+requests~=2.32.5
+djangorestframework~=3.16.1
+Pillow
+django-storages
+boto3~=1.42.46
