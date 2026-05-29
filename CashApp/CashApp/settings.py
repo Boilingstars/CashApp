@@ -71,6 +71,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'users.authentication.CustomJWTAuthentication',
+    ],
+}
+
 ROOT_URLCONF = 'CashApp.urls'
 
 TEMPLATES = [
