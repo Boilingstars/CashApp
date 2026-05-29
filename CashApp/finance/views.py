@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 
 from .models import Operation, Category, Service, FinancialProduct
 from django.db.models import Q
@@ -56,7 +57,6 @@ class OperationsFilterAPIView(APIView):
         user = request.user
         operations = Operation.objects.filter(user=user)
 
-        # Фильтр по категориям
         categories = request.data.get('categories')
         if categories:
             if isinstance(categories, list) and all(isinstance(c, str) for c in categories):
@@ -67,7 +67,6 @@ class OperationsFilterAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Фильтр по организациям (сервисам)
         services = request.data.get('services')
         if services:
             if isinstance(services, list) and all(isinstance(s, str) for s in services):
@@ -78,7 +77,6 @@ class OperationsFilterAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Фильтр по карте (серийный номер + банк)
         card = request.data.get('card')
         if card:
             if isinstance(card, dict) and 'serial_number' in card and 'bank' in card:
@@ -92,7 +90,6 @@ class OperationsFilterAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Фильтр по дате
         year = request.data.get('year')
         month = request.data.get('month')
         day = request.data.get('day')
@@ -117,7 +114,6 @@ class OperationsFilterAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Фильтр по типу операции
         op_type = request.data.get('type')
         if op_type:
             valid_types = ['income', 'expense', 'transfer']
@@ -129,20 +125,23 @@ class OperationsFilterAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Сортировка по умолчанию (сначала новые)
         operations = operations.order_by('-operation_date', '-operation_time')
 
-        # Сериализация и ответ
         serializer = OperationSerializer(operations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class OperationsAPIView(APIView):
+class SmallResultsPagination(PageNumberPagination):
+    page_size = 15
+
+
+class OperationsAPIView(ListAPIView):
+    serializer_class = OperationSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = SmallResultsPagination
 
     def get_queryset(self):
-        user = self.request.user
-        return Operation.objects.filter(user=user)
+        return Operation.objects.filter(user=self.request.user)
 
 
 class ServiceAPIView(ListAPIView):
