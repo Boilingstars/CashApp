@@ -4,8 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
+from rest_framework.generics import ListAPIView
+
 from .models import Operation, Category, Service, FinancialProduct
+from django.db.models import Q
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -133,3 +135,38 @@ class OperationsFilterAPIView(APIView):
         # Сериализация и ответ
         serializer = OperationSerializer(operations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class OperationsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Operation.objects.filter(user=user)
+
+
+class ServiceAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ServiceSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Service.objects.filter(Q(user=user) | Q(user__isnull=True))
+
+
+class CategoryAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Category.objects.filter(Q(user=user) | Q(user__isnull=True))
+
+
+class FinancialProductAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FinancialProductSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return FinancialProduct.objects.filter(user=user)

@@ -29,7 +29,7 @@ def validate_user(request):
     try:
         payload = verify_jwt_token(token)
     except Exception as e:
-        if e == 'Token expired':
+        if str(e) == 'Token expired':
             return JsonResponse({'message': 'Access token expired'}, status=200)
         else:
             return JsonResponse({'error': 'Invalid token'}, status=400)
@@ -45,12 +45,34 @@ def validate_user(request):
 
 
 @csrf_exempt
+def auth_user(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    user = User.objects.get(id=1)
+    jwt_tokens = generate_jwt_tokens(user)
+
+    return JsonResponse({
+        'access_token': jwt_tokens['access'],
+        'refresh_token': jwt_tokens['refresh'],
+        'user': {
+            'username': user.username,
+            'phone': user.phone,
+            'email': user.email,
+        }
+    })
+
+
+@csrf_exempt
 def refresh_jwt_tokens(request):
     """
     POST /auth/refresh/
     """
     if request.method == 'POST':
-        data = json.loads(request.body)
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
         try:
             refresh_token = data['refresh_token']
             try:
