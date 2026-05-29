@@ -73,7 +73,7 @@ MIDDLEWARE = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'users.authentication.CustomJWTAuthentication',
+        'users.auth.CustomJWTAuthentication',
     ],
 }
 
