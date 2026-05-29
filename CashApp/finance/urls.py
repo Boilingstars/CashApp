@@ -5,9 +5,9 @@ from . import views
 app_name = 'finance'
 
 urlpatterns = [
-    path('api/operations/filter/', views.OperationsFilterAPIView.as_view(), name='operations-filter'),
-    path('api/operations/', views.OperationsAPIView.as_view(), name='operations-filter'),
-    path('api/services/', views.ServiceAPIView.as_view(), name='services-list'),
-    path('api/categories/', views.CategoryAPIView.as_view(), name='categories-list'),
-    path('api/products/', views.FinancialProductAPIView.as_view(), name='products-list'),
+    path('operations/filter/', views.OperationsFilterAPIView.as_view(), name='operations-filter'),
+    path('operations/', views.OperationsAPIView.as_view(), name='operations-filter'),
+    path('services/', views.ServiceAPIView.as_view(), name='services-list'),
+    path('categories/', views.CategoryAPIView.as_view(), name='categories-list'),
+    path('products/', views.FinancialProductAPIView.as_view(), name='products-list'),
 ]
