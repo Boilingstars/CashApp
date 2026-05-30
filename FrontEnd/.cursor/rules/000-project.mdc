@@ -1,0 +1,53 @@
+---
+description: "Core project rules — FinHelper hackathon"
+alwaysApply: true
+---
+
+## Проект
+Мобильный веб-сервис для управления личными финансами. MVP за 48 часов.
+Mobile-first. Аудитория — люди без финансовой экспертизы.
+
+## Стек
+- React + Vite, JavaScript (НЕ TypeScript)
+- CSS Modules (НЕ Tailwind, НЕ inline styles, НЕ styled-components)
+- zustand — глобальное состояние
+- recharts — графики
+- react-router-dom v6 — роутинг
+- axios — HTTP-запросы
+
+## Структура папок
+- src/shared/ui/      — атомарные UI-компоненты (Button, Input, Card, GlassSelect, DonutChartCard, …)
+- src/components/     — составные блоки (AppShell, BottomNav, ActionMenu)
+- src/pages/          — экраны целиком (`Transactions/Stats/`, `Transactions/Category/`, …)
+- src/stores/         — zustand (auth, accounts, transactions, useFilterStore, useActionMenuStore, useReferenceStore TEMP)
+- src/lib/api/        — axios: auth, products, operations, services, categories, chat (не src/api/)
+- src/lib/products/   — mapApiProductToClient, clientProductCrud (TEMP CRUD)
+- src/lib/operations/ — mapApiOperationToClient
+- src/lib/mocks|utils|constants|hooks — данные и вспомогательная логика
+- Chat — `/chat` POST backend; локальный useState; ChatHistory — моки
+- ActionMenu — глобальное меню «+»; справочники categories/services из API (useReferenceStore TEMP)
+- TransactionFilter — фильтры (`useFilterStore`); date-picker `/transactions/filter/date-picker`
+- Profile — debug API-разведка (временно)
+
+## Docker (корень репозитория)
+- `Dockerfile` — multi-stage: `npm ci` + `vite build` → nginx:alpine
+- `nginx.conf` — SPA + прокси `/api` на `https://cashapps.ru` (как `vite.config.js`)
+- `docker-compose.yml` — сервис `web` (порт **8080:80**); профиль `dev` — Vite HMR на **5173**
+- `.dockerignore` — не исключать `nginx.conf` из контекста сборки
+- Прод: `docker compose up --build web` → http://localhost:8080
+- Dev в контейнере: `docker compose --profile dev up dev`
+
+## НЕЛЬЗЯ
+- Не добавлять TypeScript
+- Не использовать UI-библиотеки (MUI, Ant, Chakra) без явного согласования
+- Не создавать новые папки верхнего уровня без согласования
+- Не менять package.json без запроса
+- Не делать большие рефакторинги — только точечные правки
+- Не использовать inline styles и Tailwind
+- Не хранить токены в localStorage/sessionStorage — только в памяти (auth.js)
+
+## Работа в Agent mode
+1. Перечисли затрагиваемые файлы и предложи подход
+2. Жди подтверждения
+3. Только после — вносить изменения
+4. Меняй только файлы из задачи

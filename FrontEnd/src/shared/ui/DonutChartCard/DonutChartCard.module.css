@@ -1,0 +1,315 @@
+.root {
+  width: 100%;
+  min-width: 0;
+  min-height: 245px;
+  padding: 22px var(--space-24) var(--space-20);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.title {
+  margin: 0 0 18px;
+  font-family: var(--font-brand);
+  font-size: 22px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.empty {
+  margin: var(--space-24) 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.body {
+  --donut-chart-size: 152px;
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+  overflow: visible;
+}
+
+.chartWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--donut-chart-size);
+  height: var(--donut-chart-size);
+  overflow: hidden;
+}
+
+.chart {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: var(--donut-chart-size);
+  height: var(--donut-chart-size);
+  overflow: hidden;
+}
+
+.chart :global(.recharts-wrapper) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: var(--donut-chart-size) !important;
+  height: var(--donut-chart-size) !important;
+  margin: 0 !important;
+  overflow: hidden;
+}
+
+.chart :global(.recharts-surface) {
+  width: var(--donut-chart-size) !important;
+  height: var(--donut-chart-size) !important;
+  overflow: hidden;
+  outline: none;
+}
+
+.chart :global(.recharts-layer) {
+  outline: none;
+}
+
+.chart :global(.recharts-pie-sector) {
+  outline: none;
+  pointer-events: none;
+}
+
+.centerDisc {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid rgba(44, 44, 44, 0.08);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 4px;
+  text-align: center;
+  max-width: 100%;
+}
+
+.monthLabel {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.1;
+  color: rgba(44, 44, 44, 0.3);
+}
+
+.centerAmount {
+  margin: 0;
+  max-width: 76px;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.centerDiscDebt {
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: none;
+}
+
+.centerAmountLarge {
+  max-width: none;
+  font-size: 42px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.legend {
+  flex: 1;
+  min-width: 0;
+  height: var(--donut-chart-size);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 11px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.legendItem {
+  display: grid;
+  grid-template-columns: 11px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-12);
+  min-height: 18px;
+  overflow: visible;
+}
+
+.legendItemCompact {
+  display: grid;
+  grid-template-columns: 11px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-12);
+  min-height: 18px;
+  overflow: visible;
+}
+
+.legendDebt .legendItemCompact {
+  grid-template-columns: 15px minmax(0, 1fr);
+  column-gap: var(--space-12);
+  min-height: 15px;
+}
+
+.legendFooterBlock {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legendDebt .legendFooterBlock {
+  margin-top: 22px;
+}
+
+.legendFooterPill {
+  width: 100%;
+  max-width: 184px;
+  min-height: 52px;
+  padding: 8px 22px;
+  border-radius: 60px;
+  background: var(--color-surface);
+  border: 0.25px solid #eee;
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.legendFooterLabel {
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: rgba(44, 44, 44, 0.2);
+}
+
+.legendFooterValue {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.legendDebt {
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.legendDebt .legendItemCompact + .legendItemCompact {
+  margin-top: 12px;
+}
+
+.legendDotDebt {
+  width: 15px;
+  height: 15px;
+}
+
+.legendDebt .legendDotCell {
+  width: 15px;
+  height: 15px;
+}
+
+.legendNameDebt {
+  font-size: 12px;
+  line-height: var(--line-height-normal);
+}
+
+.legendPercent {
+  color: rgba(44, 44, 44, 0.6);
+}
+
+.legendDotCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 18px;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.legendDot {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.legendName {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legendAmount {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  color: rgba(44, 44, 44, 0.65);
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .body {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-16);
+  }
+
+  .legend {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    gap: var(--space-12);
+  }
+
+  .legendDebt {
+    height: auto;
+  }
+
+  .legendDebt .legendFooterBlock {
+    margin-top: 22px;
+  }
+}

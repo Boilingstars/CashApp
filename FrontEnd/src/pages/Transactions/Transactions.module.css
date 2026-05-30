@@ -1,0 +1,189 @@
+.page {
+  min-height: 100svh;
+  background: var(--color-background);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+  box-sizing: border-box;
+  padding: 76px var(--space-18)
+    calc(var(--bottom-nav-offset) + var(--space-24) + env(safe-area-inset-bottom));
+}
+
+.spendingCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
+  padding: 22px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-card);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.spendingCard:active {
+  transform: scale(0.99);
+}
+
+.spendingCard:focus-visible {
+  outline: 2px solid var(--color-on-accent);
+  outline-offset: 2px;
+}
+
+.spendingText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.spendingTitle {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-on-accent);
+}
+
+.spendingSubtitle {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.calendarIconWrap {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendarIcon {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.chatButtonWrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.chatButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-height: 42px;
+  margin: 0;
+  padding: 9px var(--space-24);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(var(--color-background), var(--color-background)) padding-box,
+    linear-gradient(90deg, #5c03bc 0%, #e536ab 100%) border-box;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.chatButton:active {
+  transform: scale(0.98);
+}
+
+.chatButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.chatButtonText {
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.chatButtonIcon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  width: 100%;
+  min-height: 72px;
+  margin: 0;
+  padding: var(--space-16) var(--space-20);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.infoRow:active {
+  transform: scale(0.99);
+}
+
+.infoRow:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.infoText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.infoTitle {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.infoSubtitle {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  display: block;
+  flex-shrink: 0;
+}

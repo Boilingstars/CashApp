@@ -1,0 +1,109 @@
+.root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-bottom-nav);
+  height: var(--bottom-nav-offset);
+  padding-bottom: env(safe-area-inset-bottom);
+  pointer-events: none;
+}
+
+.pill {
+  position: absolute;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: 204px;
+  height: 62px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(5px);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.item {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.35);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.itemActive {
+  background: rgba(255, 255, 255, 1);
+}
+
+.icon {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+  display: block;
+  transition: filter 0.2s ease;
+}
+
+.itemActive .icon {
+  filter: brightness(0);
+}
+
+.plusButton {
+  position: absolute;
+  right: 34px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 1;
+  width: 62px;
+  height: 62px;
+  border: 0;
+  padding: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-green);
+  box-shadow: none;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.plusIcon {
+  width: 26px;
+  height: 26px;
+  display: block;
+  transition: transform var(--action-menu-duration) ease;
+}
+
+.plusButtonOpen {
+  position: fixed;
+  z-index: calc(var(--z-action-menu) + 1);
+}
+
+.plusIconOpen {
+  transform: rotate(45deg);
+}
+
+.item:focus-visible,
+.plusButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.item:active,
+.plusButton:active {
+  transform: scale(0.98);
+}

@@ -1,0 +1,191 @@
+.page {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0 auto;
+  background: var(--color-background);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topFixed {
+  flex-shrink: 0;
+  z-index: 20;
+  background: var(--color-background);
+  animation: calendarSlideIn 0.35s ease-out;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: 76px var(--space-18) var(--space-12);
+}
+
+.headerTitle {
+  margin: 0;
+  flex: 1;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.confirmButton {
+  width: 58px;
+  height: var(--control-height-sm);
+  flex: 0 0 58px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #65d686;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.confirmButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.confirmIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-on-accent);
+  stroke-width: 2.5;
+}
+
+@keyframes calendarSlideIn {
+  from {
+    transform: translateY(-32px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 var(--space-18);
+  box-sizing: border-box;
+}
+
+.weekday {
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: rgba(44, 44, 44, 0.4);
+  text-align: center;
+}
+
+.divider {
+  height: 1px;
+  margin: var(--space-12) var(--space-18) 0;
+  background: var(--color-border);
+}
+
+.monthsScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-12) var(--space-18) calc(var(--space-24) + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+.monthSection {
+  margin-top: 22px;
+}
+
+.monthSection:first-child {
+  margin-top: 0;
+}
+
+.monthTitle {
+  margin: 0 0 var(--space-12);
+  padding: 0 var(--space-24);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: var(--space-12);
+  column-gap: 0;
+}
+
+.dayEmpty {
+  display: block;
+  min-height: 34px;
+}
+
+.dayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 34px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dayButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.dayButton:active {
+  transform: scale(0.96);
+}
+
+.daySingle {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+.dayStart {
+  background: #ff2b2b;
+  color: var(--color-on-accent);
+}
+
+.dayEnd {
+  background: var(--color-text-primary);
+  color: var(--color-on-accent);
+}

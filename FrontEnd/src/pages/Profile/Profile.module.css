@@ -1,0 +1,93 @@
+.page {
+  padding: 16px;
+  padding-bottom: 32px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.note {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #666);
+}
+
+.debugSection {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px dashed var(--color-border, #e2e2e2);
+  border-radius: 12px;
+  background: var(--color-surface, #fafafa);
+}
+
+.debugSection:last-child {
+  margin-bottom: 0;
+}
+
+.debugTitle {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.debugHint {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+}
+
+.fetchButton {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-primary, #004385);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--color-primary, #004385);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.fetchButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.statusLine {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.statusOk {
+  color: #1b7f3a;
+}
+
+.statusError {
+  color: #b00020;
+}
+
+.blockTitle {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary, #666);
+}
+
+.pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

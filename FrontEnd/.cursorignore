@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+*.lock
+**/*.log
+.env*
+.env.local
+server/__pycache__/
+server/.venv/
+.DS_Store

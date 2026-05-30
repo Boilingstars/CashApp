@@ -2,11 +2,6 @@ services:
   web:
     build: .
     container_name: django_app
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py init_redis_index &&
-             python manage.py collectstatic --noinput &&
-             gunicorn CashApp.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
     volumes:
       - .:/app
       - model_cache:/app/.cache
@@ -25,6 +20,15 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../FrontEnd
+      dockerfile: Dockerfile
+    volumes:
+      - frontend_dist:/output
+    command: sh -c "cp -r /app/dist/. /output/"
+    restart: "no"
 
   db:
     image: postgres:18-alpine
@@ -56,8 +60,12 @@ services:
       - ./certbot/www:/var/www/certbot:ro
       - static_volume:/static:ro
       - media_volume:/media:ro
+      - frontend_dist:/usr/share/nginx/html:ro
     depends_on:
-      - web
+      frontend:
+        condition: service_completed_successfully
+      web:
+        condition: service_started
     restart: unless-stopped
 
   redis:
@@ -84,3 +92,4 @@ volumes:
   media_volume:
   redis_data:
   model_cache:
+  frontend_dist:

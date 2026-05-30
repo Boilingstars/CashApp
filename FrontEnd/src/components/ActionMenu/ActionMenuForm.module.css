@@ -1,0 +1,320 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  min-height: 262px;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 58px 1fr 42px;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.confirmButton {
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #65d686;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  justify-self: end;
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.confirmIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-on-accent);
+  stroke-width: 2.5;
+}
+
+.amountSection {
+  position: relative;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.amountPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-brand);
+  font-size: 42px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: #d1d1d1;
+  pointer-events: none;
+}
+
+.amountInput {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-brand);
+  font-size: 42px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  text-align: center;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.amountInput:disabled {
+  opacity: 0.6;
+}
+
+.nextIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-on-accent);
+  stroke-width: 2.5;
+}
+
+.headerSpacer {
+  width: 42px;
+  height: 42px;
+  justify-self: end;
+}
+
+.fieldSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.fieldLabel {
+  margin: 0;
+  padding-left: var(--space-32);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.fieldSelectWrap {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.rootStepMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 262px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  column-gap: 12px;
+  row-gap: 10px;
+}
+
+.metaLabel {
+  margin: 0;
+  padding-left: var(--space-12);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.metaFieldWide {
+  min-width: 0;
+}
+
+.metaInputWide,
+.metaInputNarrow {
+  width: 100%;
+  height: 52px;
+  margin: 0;
+  border: 0;
+  border-radius: 60px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-icon);
+  padding: 0 15px;
+  box-sizing: border-box;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.metaInputWide:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.metaInputWide::placeholder {
+  color: rgba(44, 44, 44, 0.4);
+}
+
+.metaInputWide:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.metaInputNarrow:disabled:not(.metaDateButton) {
+  opacity: 1;
+  cursor: default;
+}
+
+.metaInputNarrow {
+  padding: 0 15px;
+  text-align: left;
+}
+
+.metaInputNarrow::placeholder {
+  color: rgba(44, 44, 44, 0.4);
+}
+
+.metaInputNarrow:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.metaDateButton {
+  cursor: pointer;
+  text-align: left;
+}
+
+.metaDateButtonEmpty {
+  color: rgba(44, 44, 44, 0.4);
+}
+
+.metaDateButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.textInput {
+  width: 100%;
+  max-width: 320px;
+  height: 52px;
+  margin: 0 auto;
+  display: block;
+  border: 0;
+  border-radius: 60px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-icon);
+  padding: 0 var(--space-24);
+  box-sizing: border-box;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.textInput::placeholder {
+  color: rgba(44, 44, 44, 0.4);
+}
+
+.textInput:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.textInput:disabled {
+  opacity: 0.6;
+}
+
+.stubSummary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 52px;
+  justify-content: center;
+}
+
+.stubAmount {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: 42px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.stubCategory {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.stubText {
+  margin: 0;
+  padding: var(--space-16) var(--space-12);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.accountSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.accountLabel {
+  margin: 0;
+  padding-left: var(--space-32);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.accountSelectWrap {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}

@@ -1,0 +1,74 @@
+---
+description: "Frontend rules"
+globs: ["src/**"]
+alwaysApply: false
+---
+
+## CSS Modules
+- Каждый компонент имеет свой файл ComponentName.module.css
+- Классы — camelCase: styles.cardWrapper, styles.primaryButton
+- Глобальные переменные — в src/styles/variables.css через :root
+- Медиа-запросы только через переменные из variables.css
+
+## Компоненты
+- Функциональные компоненты, стрелочные функции
+- Пропсы деструктурируются в параметрах
+- Один компонент — один файл
+- Экспорт: named export везде.
+- Исключение: App.jsx — export default.
+
+## Mobile-first
+- Базовые стили — для мобильного
+- @media (min-width: 768px) — для планшета и выше
+- Минимальный touch-target: 44px
+- Hover-only UI: дублировать через tap/state + `@media (hover: hover)` (см. Chat actions, ActionMenu rows)
+- Длинные списки чата: `ref` на scroll-контейнер + `scrollTop = scrollHeight` в `useEffect` (не zustand)
+
+## Состояние
+- Локальное — useState (Chat messages/session; date-picker UI state)
+- Глобальное — zustand: auth, accounts, transactions, filters, action-menu
+- **useReferenceStore** — TEMP: services/categories для ActionMenuNewExpense
+- **Фильтры операций** — `useFilterStore`; не смешивать с `useTransactionsStore.operationType`
+- Не использовать prop drilling глубже 2 уровней
+
+## Паттерн страницы
+store → useMemo + утилиты → props в shared/ui
+Страницы только читают store, запросов к API не делают напрямую.
+Исключение (TEMP): `/transactions` dashboard — debt donut захардкожен на странице.
+
+## Bootstrap (AppShell)
+`fetchUser()` → `Promise.all([fetchProducts(), fetchOperations()])` → `<Outlet />`
+Mapper: `lib/products/mapApiProductToClient.js`, `lib/operations/mapApiOperationToClient.js`
+
+## API и прокси
+- Клиент: `apiClient` с `baseURL: '/api'` (`src/lib/api/axiosInstance.js`)
+- **Локально:** Vite proxy в `vite.config.js` → `https://cashapps.ru`
+- **Docker prod:** nginx в `nginx.conf` — те же правила (`/api/auth` → `/auth`, `/api/chat` → `/chat`, остальное `/api`)
+- Auth — отдельный `authClient` (`auth.js`), токены только в памяти
+
+## DonutChartCard
+- Общий компонент: `src/shared/ui/DonutChartCard/` (recharts)
+- **TransactionStats** — суммы в центре и легенде (`totalAmount`, `monthLabel`)
+- **Debt-вариант** (Transactions): `centerText`, `hideLegendAmounts`, `legendFooter` — не ломать props при правках stats
+
+## Транзакции / категории
+- Данные — `useTransactionsStore` (API operations + TEMP prepend из action menu)
+- Группировка по `category_name` — `calcTransactionStats.js`
+- **TransactionStats** / **TransactionCategory** — + `useFilterStore` через `applyTransactionFilters`
+- **TransactionFilter** (`853:410`); **DatePickerPlaceholder** (`853:457`)
+- **TransactionCategory** — hero gradient + `BackButton variant="card"`; чипы TEMP
+
+## Action Menu (новая трата / поступление)
+- **Категории/магазины** — `useReferenceStore` + API; TEMP exclude income categories; fallback mock helpers
+- **Сохранение:** `submitNewExpense.js` — TEMP локально (без POST operations)
+- **GlassSelect** — `size="compact"` на шаге 2
+
+## Chat
+- **API:** `lib/api/chat.js` → `POST /api/chat/message/` body `{ content }`
+- **UI:** `useState` messages; send, quick questions, loading «Cash Ask печатает…»
+- **ChatHistory** — моки (`chatMocks.js`)
+
+## Zustand anti-pattern
+НЕ создавать вычисляемые массивы как геттеры в store (sortedX, groupedX) —
+вызывают лишние ре-рендеры.
+Только useMemo на уровне страницы.

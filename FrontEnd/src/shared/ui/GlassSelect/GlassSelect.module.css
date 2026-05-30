@@ -1,0 +1,187 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.rootCompact .trigger {
+  height: 52px;
+  padding: 0 36px 0 15px;
+  font-size: 18px;
+  font-weight: var(--font-weight-medium);
+  color: rgba(44, 44, 44, 0.4);
+  box-shadow: var(--shadow-icon);
+}
+
+.rootCompact .chevron {
+  right: 15px;
+  width: 8px;
+  height: 8px;
+}
+
+.trigger {
+  width: 100%;
+  height: var(--control-height-lg);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  padding: 0 44px 0 20px;
+  box-sizing: border-box;
+  font-family: var(--font-brand);
+  font-size: 18px;
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.chevron {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-text-secondary);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+  transition: transform var(--action-menu-duration) ease;
+}
+
+.chevronOpen {
+  transform: translateY(-35%) rotate(-135deg);
+}
+
+/* Портал: как action menu / Figma 1033:8 — по центру экрана, 354px */
+.portal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-action-menu);
+  pointer-events: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--action-menu-overlay-bg);
+  cursor: default;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.panelModal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(var(--action-menu-card-width), calc(100vw - var(--action-menu-card-margin) * 2));
+  max-height: min(556px, calc(100svh - var(--space-32)));
+  margin: 0;
+  padding: var(--action-menu-card-padding);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-glass-bg);
+  backdrop-filter: blur(var(--surface-glass-blur));
+  -webkit-backdrop-filter: blur(var(--surface-glass-blur));
+  box-shadow: var(--surface-glass-shadow);
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  pointer-events: auto;
+  box-sizing: border-box;
+  animation: glassSelectModalIn var(--action-menu-duration) ease forwards;
+}
+
+.panelModal::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes glassSelectModalIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 10px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.item {
+  margin: 0;
+  padding: 2px var(--action-menu-item-inset-x);
+}
+
+.option {
+  width: 100%;
+  min-height: var(--action-menu-row-height);
+  margin: 0;
+  padding: 0 var(--action-menu-item-padding-x);
+  border: 0;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  background: transparent;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-22);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.optionSelected {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.option:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+@media (hover: hover) {
+  .option:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .option:active {
+    background: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+
+  .panelModal {
+    animation: none;
+    transform: translate(-50%, -50%);
+  }
+}

@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500&display=swap');
+
+:root {
+  /* Colors (from Figma Home frame 814:1013) */
+  --color-background: #f6f6f5;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #fafafa;
+  --color-surface-muted: #eaeaea;
+  --color-border: #e2e2e2;
+  --color-text-primary: #2c2c2c;
+  --color-text-secondary: #969696;
+  --color-on-accent: #ffffff;
+
+  /* Accent / gradients */
+  --color-accent-1: #5c03bc;
+  --color-accent-2: #e536ab;
+  --color-accent-3: #0e0725;
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-brand: 'Montserrat', var(--font-sans);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-size-12: 12px;
+  --font-size-16: 16px;
+  --font-size-20: 20px;
+  --font-size-22: 22px;
+  --font-size-36: 36px;
+  --line-height-normal: normal;
+
+  /* Radii */
+  --radius-pill: 30px;
+  --radius-md: 10px;
+
+  /* Spacing */
+  --space-6: 6px;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-18: 18px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+
+  /* Shadows */
+  --shadow-sm: 0px 0px 4px 0px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0px 0px 10px 4px rgba(0, 0, 0, 0.1);
+  --shadow-icon: 0px 0px 4px 0px rgba(0, 0, 0, 0.1);
+
+  /* Icon sizes */
+  --icon-size-sm: 20px;
+  --icon-size-md: 30px;
+
+  /* Control sizes */
+  --control-height-sm: 42px;
+  --control-height-lg: 62px;
+
+  /* Layout */
+  --layout-max-width: 440px;
+  --bottom-nav-offset: calc(var(--control-height-lg) + 18px);
+  --z-bottom-nav: 100;
+  --z-action-menu: 110;
+  --action-menu-duration: 0.22s;
+  --action-menu-overlay-bg: transparent;
+  --action-menu-card-width: 354px;
+  --action-menu-card-margin: 43px;
+  --action-menu-card-gap-above-nav: 41px;
+  --action-menu-card-bottom: calc(
+    18px + var(--control-height-lg) + var(--action-menu-card-gap-above-nav) +
+      env(safe-area-inset-bottom)
+  );
+  --action-menu-card-padding: 30px;
+  --action-menu-row-height: 49px;
+  --action-menu-row-gap: 22px;
+  --action-menu-item-inset-x: 0;
+  --action-menu-item-padding-x: 12px;
+  --action-menu-form-width: 404px;
+  --action-menu-form-margin: 18px;
+  --action-menu-form-padding: 18px;
+  --action-menu-success-top: 318px;
+  /* Figma 817:1525 — frosted glass: полупрозрачные слои + blur */
+  --action-menu-card-bg:
+    linear-gradient(0deg, rgba(245, 245, 245, 0.6) 0%, rgba(245, 245, 245, 0.6) 100%),
+    linear-gradient(0deg, rgba(38, 38, 38, 0.22) 0%, rgba(38, 38, 38, 0.22) 100%);
+  --action-menu-card-blur: 8px;
+  --action-menu-separator-bg: #dbdbdb;
+  --action-menu-separator-track-bg: #c4c4c4;
+
+  /* Переиспользуемый frosted glass (как action menu) */
+  --surface-glass-bg: var(--action-menu-card-bg);
+  --surface-glass-blur: var(--action-menu-card-blur);
+  --surface-glass-shadow: var(--shadow-icon);
+  --chat-input-gap-above-nav: 22px;
+
+  /* Analytics / plan card */
+  --color-plan-accent: #4b749f;
+
+  /* Gradients & accents */
+  --gradient-card: linear-gradient(90deg, #243748 0%, #4b749f 100%);
+  --color-accent-green: #66d992;
+}

@@ -1,0 +1,91 @@
+.root {
+  width: 100%;
+}
+
+.goToChatWrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--space-18);
+  margin-bottom: var(--space-12);
+}
+
+.inputBar {
+  height: var(--control-height-lg);
+  display: grid;
+  grid-template-columns: 44px 1fr 44px 54px;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 0 var(--space-10);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  margin: 0 var(--space-18);
+}
+
+.iconButton {
+  height: 44px;
+  width: 44px;
+  border: 0;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iconAdd {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  display: block;
+}
+
+.iconMic {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+  width: 100%;
+}
+
+.input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.sendButton {
+  height: 42px;
+  width: 42px;
+  border: 0;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--gradient-card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sendIcon {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.iconButton:focus-visible,
+.sendButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}

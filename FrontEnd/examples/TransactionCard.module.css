@@ -1,0 +1,26 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.title {
+  font-weight: 500;
+}
+
+.tag {
+  font-size: 14px;
+  color: #969696;
+}
+
+.amount {
+  font-weight: 500;
+}
+
+.date {
+  font-size: 12px;
+  color: #969696;
+}

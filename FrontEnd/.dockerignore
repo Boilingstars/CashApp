@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+.cursor
+.local
+.notes
+*.md
+.dockerignore
+coverage
+.env
+.env.*

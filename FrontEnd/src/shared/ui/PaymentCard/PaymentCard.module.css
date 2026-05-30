@@ -1,0 +1,119 @@
+.root {
+  position: relative;
+  flex: 0 0 196px;
+  width: 196px;
+  min-height: 183px;
+  padding: 16px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.rootLight {
+  color: var(--color-text-primary);
+}
+
+.rootDark {
+  color: var(--color-on-accent);
+}
+
+.topRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.iconPlaceholder {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.rootLight .iconPlaceholder {
+  background: var(--color-surface-muted);
+}
+
+.menuButton {
+  width: 44px;
+  height: 44px;
+  margin: -6px -6px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.menuIcon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.menuDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.body {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--space-12);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amount {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  white-space: nowrap;
+}
+
+.daysLabel {
+  margin: 8px 0 0;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-12);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+}
+
+.rootLight .daysLabel {
+  color: rgba(44, 44, 44, 0.5);
+}
+
+.rootDark .daysLabel {
+  color: rgba(255, 255, 255, 0.5);
+}

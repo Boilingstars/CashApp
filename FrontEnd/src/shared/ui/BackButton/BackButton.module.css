@@ -1,0 +1,73 @@
+.root {
+  width: 58px;
+  height: var(--control-height-sm);
+  flex: 0 0 58px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-primary);
+  stroke-width: 2;
+}
+
+.root:active {
+  transform: scale(0.98);
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.rootOnDark {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.rootOnDark .icon {
+  color: var(--color-text-primary);
+}
+
+.rootOnDark:focus-visible {
+  outline-color: var(--color-on-accent);
+}
+
+.rootGhostOnDark {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: none;
+}
+
+.rootGhostOnDark .icon {
+  color: var(--color-on-accent);
+}
+
+.rootGhostOnDark:focus-visible {
+  outline-color: var(--color-on-accent);
+}
+
+/* Figma 1038:60 — как default BackButton, фон #FFF и border #E2E2E2 */
+.root.rootCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+

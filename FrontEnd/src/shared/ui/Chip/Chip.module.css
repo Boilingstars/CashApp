@@ -1,0 +1,73 @@
+.root {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-brand);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.variant_carousel {
+  height: var(--control-height-sm);
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+.variant_pill {
+  height: var(--control-height-sm);
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.size_md {
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-normal);
+  font-weight: var(--font-weight-regular);
+}
+
+.size_lg {
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-normal);
+  font-weight: var(--font-weight-medium);
+}
+
+.active.variant_carousel {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-regular);
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+

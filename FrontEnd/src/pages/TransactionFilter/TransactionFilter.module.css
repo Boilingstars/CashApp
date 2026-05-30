@@ -1,0 +1,446 @@
+.page {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  min-height: 100svh;
+  margin: 0 auto;
+  background: var(--color-background);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-shrink: 0;
+  background: var(--color-background);
+  padding: 76px var(--space-18) var(--space-12);
+}
+
+.headerInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height-sm);
+}
+
+.headerTitle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0 58px;
+  text-align: center;
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-12) var(--space-18)
+    calc(var(--control-height-lg) + var(--space-32) + var(--space-18) + env(safe-area-inset-bottom));
+}
+
+.section {
+  margin-top: var(--space-12);
+}
+
+.section:first-child {
+  margin-top: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  padding: 0 var(--space-24);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.collapsibleOpen {
+  grid-template-rows: 1fr;
+}
+
+.collapsibleInner {
+  overflow: hidden;
+}
+
+.categoriesCollapsible {
+  grid-template-rows: 1fr;
+}
+
+.categoriesCollapsible .collapsibleInner {
+  max-height: calc(var(--space-12) + var(--control-height-sm) * 2 + var(--space-12));
+  transition: max-height 0.25s ease;
+}
+
+.categoriesCollapsible.categoriesExpanded .collapsibleInner {
+  max-height: 1000px;
+}
+
+.chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  padding-top: var(--space-12);
+}
+
+.chip {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chip:active {
+  transform: scale(0.98);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.chipActive[data-color-index='0'] {
+  background-color: #004385;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='1'] {
+  background-color: #033860;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='2'] {
+  background-color: #133c55;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='3'] {
+  background-color: #33658a;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='4'] {
+  background-color: #386fa4;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='5'] {
+  background-color: #59a5d8;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='6'] {
+  background-color: #05b2dc;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.chipActive[data-color-index='7'] {
+  background-color: #84d2f6;
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.expandToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--space-8) 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.expandToggle:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.expandIcon {
+  width: 52px;
+  height: 26px;
+  display: block;
+  transition: transform 0.25s ease;
+}
+
+.expandIconOpen {
+  transform: rotate(180deg);
+}
+
+.periodRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-12);
+  padding-top: var(--space-12);
+}
+
+.operationsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  padding-top: var(--space-12);
+}
+
+.pillButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: var(--control-height-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: 1;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0 22px;
+  white-space: nowrap;
+}
+
+.periodButtonWeek {
+  flex: 0 0 107px;
+  width: 107px;
+}
+
+.periodButtonMonth {
+  flex: 0 0 99px;
+  width: 99px;
+}
+
+.periodButtonDates {
+  flex: 1 1 171px;
+  min-width: 171px;
+}
+
+.pillButton:active {
+  transform: scale(0.98);
+}
+
+.pillButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.pillButtonActive {
+  background: var(--color-text-primary);
+  border-color: transparent;
+  color: var(--color-on-accent);
+}
+
+.accountList,
+.accountListHidden {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding-top: var(--space-12);
+}
+
+.accountCard {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  width: 100%;
+  min-height: 82px;
+  padding: var(--space-12) 31px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+.accountCard:active {
+  transform: scale(0.99);
+}
+
+.accountCard:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
+
+.checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #d9d9d9;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.checkboxChecked {
+  background: var(--color-text-primary);
+  border-color: transparent;
+}
+
+.checkmark {
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid var(--color-on-accent);
+  border-bottom: 2px solid var(--color-on-accent);
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.accountInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.accountLabel {
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.accountAmount {
+  font-family: var(--font-brand);
+  font-size: var(--font-size-20);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.accountIconWrap {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-icon);
+  background: var(--color-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.accountIconWrapFullBleed {
+  background: transparent;
+  box-shadow: none;
+}
+
+.accountIcon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  object-fit: contain;
+}
+
+.accountIconFullBleed {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  box-shadow: var(--shadow-icon);
+}
+
+.actionBar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 30;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--layout-max-width);
+  display: flex;
+  gap: var(--space-12);
+  justify-content: center;
+  padding: var(--space-18) var(--space-18) calc(var(--space-18) + env(safe-area-inset-bottom));
+  background: transparent;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.resetButton,
+.applyButton {
+  flex: 1;
+  max-width: 155px;
+  min-height: var(--control-height-lg);
+  border: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-icon);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-22);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.resetButton {
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--color-text-primary);
+}
+
+.applyButton {
+  background: rgba(44, 44, 44, 0.8);
+  color: var(--color-on-accent);
+}
+
+.resetButton:active,
+.applyButton:active {
+  transform: scale(0.98);
+}
+
+.resetButton:focus-visible,
+.applyButton:focus-visible {
+  outline: 2px solid var(--color-accent-1);
+  outline-offset: 2px;
+}
