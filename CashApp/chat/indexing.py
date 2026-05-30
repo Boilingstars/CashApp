@@ -21,9 +21,9 @@ PERIOD_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r'пол(?:тора)?\s*года|1\.5\s*года'), 'eighteen_months'),
     (re.compile(r'полгода|6\s*месяцев?|шесть\s*месяцев?'), 'six_months'),
     (re.compile(r'в\s*этом\s*году|этот\s*год|текущ(?:ий|ем)\s*год'), 'calendar_year'),
-    (re.compile(r'за\s*год|последн(?:ий|его|ем)\s*год|(?<![\w])год(?![\w])'), 'year'),
+    (re.compile(r'за\s*год|последн(?:ий|его|ем)\s*год(?![\w])'), 'year'),
     (re.compile(r'в\s*этом\s*месяце|этот\s*месяц|текущ(?:ий|ем)\s*месяц'), 'calendar_month'),
-    (re.compile(r'за\s*месяц|последн(?:ий|его|ем)\s*месяц|(?<![\w])месяц(?![\w])'), 'month'),
+    (re.compile(r'за\s*месяц|последн(?:ий|его|ем)\s*месяц(?![\w])'), 'month'),
 )
 
 
@@ -97,7 +97,6 @@ def detect_query_period(query: str) -> tuple[date, date, str] | None:
 
 
 def build_all_user_chunks(user_id: int) -> list[dict]:
-    """Собрать все записи пользователя для индексации в Redis."""
     chunks = []
 
     for product in FinancialProduct.objects.filter(user_id=user_id):
@@ -160,7 +159,8 @@ def _merge_chunks(*chunk_lists: list[dict]) -> list[dict]:
             if chunk_id in seen:
                 continue
             seen.add(chunk_id)
-            merged.append(chunk)
+            clean = {k: v for k, v in chunk.items() if k != 'embedding'}
+            merged.append(clean)
     return merged
 
 
@@ -177,17 +177,44 @@ def _filter_operations_by_period(chunks: list[dict], date_from: date, date_to: d
     return result
 
 
-def sync_user_financial_chunks(user_id: int):
-    """Переиндексировать все записи пользователя: эмбеддинги + Redis."""
-    from .embeddings import encode_texts
-    from .redis import create_vector_index, delete_user_chunks, get_redis, store_chunks_batch
+def _db_fallback_chunks(user_id: int, query: str) -> list[dict]:
+    """Fallback напрямую из PostgreSQL, если Redis пуст."""
+    chunks = build_all_user_chunks(user_id)
+    if not chunks:
+        return []
 
-    create_vector_index()
+    period = detect_query_period(query)
+    products = [c for c in chunks if c['metadata']['source'] == 'financial_product']
+    payments = [c for c in chunks if c['metadata']['source'] == 'upcoming_payment']
+    operations = [c for c in chunks if c['metadata']['source'] == 'operation']
+
+    if period:
+        date_from, date_to, _ = period
+        operations = _filter_operations_by_period(operations, date_from, date_to)
+    elif len(operations) > settings.RAG_MAX_OPERATIONS:
+        operations = operations[: settings.RAG_MAX_OPERATIONS]
+
+    return _merge_chunks(products, payments, operations)
+
+
+def sync_user_financial_chunks(user_id: int):
+    from .embeddings import encode_texts
+    from .redis import (
+        _index_needs_recreate,
+        count_user_chunks,
+        create_vector_index,
+        delete_user_chunks,
+        get_redis,
+        store_chunks_batch,
+    )
+
+    create_vector_index(force=_index_needs_recreate())
     chunks = build_all_user_chunks(user_id)
     delete_user_chunks(user_id)
 
     if not chunks:
         logger.info('No financial data to index for user %s', user_id)
+        get_redis().delete(f'rag_synced:{user_id}')
         return
 
     texts = [chunk['text'] for chunk in chunks]
@@ -196,30 +223,34 @@ def sync_user_financial_chunks(user_id: int):
     embeddings = encode_texts(texts, batch_size=settings.EMBEDDING_BATCH_SIZE)
     store_chunks_batch(user_id, chunks, embeddings)
 
-    get_redis().set(f'rag_synced:{user_id}', str(len(chunks)))
-    logger.info('RAG index synced for user %s (%s chunks)', user_id, len(chunks))
+    stored = count_user_chunks(user_id)
+    get_redis().set(f'rag_synced:{user_id}', str(stored))
+    logger.info('RAG index synced for user %s (%s chunks in Redis)', user_id, stored)
 
 
 def ensure_user_chunks(user_id: int):
-    from .redis import get_redis, user_has_chunks
+    from .redis import count_user_chunks, get_redis
 
     redis_conn = get_redis()
-    if user_has_chunks(user_id) and redis_conn.get(f'rag_synced:{user_id}'):
+    synced_raw = redis_conn.get(f'rag_synced:{user_id}')
+    synced_count = int(synced_raw) if synced_raw else 0
+    actual_count = count_user_chunks(user_id)
+    db_count = len(build_all_user_chunks(user_id))
+
+    if synced_count > 0 and actual_count == synced_count and actual_count == db_count:
         return
-    try:
-        sync_user_financial_chunks(user_id)
-    except Exception as exc:
-        redis_conn.delete(f'rag_synced:{user_id}')
-        raise exc
+
+    logger.info(
+        'RAG resync user %s: redis=%s synced_flag=%s db=%s',
+        user_id,
+        actual_count,
+        synced_count,
+        db_count,
+    )
+    sync_user_financial_chunks(user_id)
 
 
 def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
-    """
-    1. Синхронизировать все записи пользователя в Redis (если ещё нет).
-    2. Закодировать запрос той же моделью.
-    3. KNN-поиск в Redis по user_id.
-    4. При указании периода — добавить все операции за интервал.
-    """
     from .redis import fetch_user_chunks_by_source, search_similar_chunks
 
     ensure_user_chunks(user_id)
@@ -233,12 +264,20 @@ def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
         date_from, date_to, period_key = period
         all_operations = fetch_user_chunks_by_source(user_id, 'operation')
         period_operations = _filter_operations_by_period(all_operations, date_from, date_to)
-        logger.info(
-            'RAG period=%s for user %s: %s operations in range',
-            period_key,
-            user_id,
-            len(period_operations),
-        )
-        return _merge_chunks(product_chunks, payment_chunks, period_operations, vector_hits)
+        merged = _merge_chunks(product_chunks, payment_chunks, period_operations, vector_hits)
+    else:
+        merged = _merge_chunks(product_chunks, payment_chunks, vector_hits)
 
-    return _merge_chunks(product_chunks, payment_chunks, vector_hits)
+    if not merged:
+        logger.warning('Redis RAG empty for user %s, using DB fallback', user_id)
+        merged = _db_fallback_chunks(user_id, query)
+
+    logger.info(
+        'RAG context user %s: products=%s payments=%s vector=%s total=%s',
+        user_id,
+        len(product_chunks),
+        len(payment_chunks),
+        len(vector_hits),
+        len(merged),
+    )
+    return merged
