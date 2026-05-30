@@ -9,6 +9,7 @@ services:
              gunicorn CashApp.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
     volumes:
       - .:/app
+      - model_cache:/app/.cache
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     expose:
@@ -82,3 +83,4 @@ volumes:
   static_volume:
   media_volume:
   redis_data:
+  model_cache:
