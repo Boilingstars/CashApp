@@ -11,8 +11,6 @@ from .utils.jwt import verify_jwt_token
 
 User = django.contrib.auth.get_user_model()
 
-# Create your views here.
-
 def validate_user(request):
     auth_header = request.headers.get('Authorization')
 
