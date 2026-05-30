@@ -21,8 +21,10 @@ def _build_rag_context_block(chunks: list[dict]) -> str:
             'Сообщи об этом и задай уточняющие вопросы.'
         )
     lines = [
-        'Финансовые данные пользователя (обязательно учитывай в ответе, ссылайся на конкретные счета и платежи):',
+        'Финансовые данные пользователя (обязательно учитывай в ответе):',
     ]
+    if any(c.get('metadata', {}).get('source') == 'operation' for c in chunks):
+        lines.append('Ниже — операции/траты с категориями. Суммируй и анализируй их при ответе.')
     for chunk in chunks:
         lines.append(f'- {chunk["text"]}')
     return '\n'.join(lines)

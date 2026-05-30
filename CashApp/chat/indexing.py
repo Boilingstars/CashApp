@@ -16,6 +16,26 @@ CREDIT_PRODUCT_TYPES = {
     ProductType.LOAN,
 }
 
+# Запросы о тратах — по умолчанию последние 30 дней
+SPENDING_QUERY_HINTS = (
+    'трат', 'расход', 'потрат', 'сколько', 'обычно', 'жрат', 'уходит', 'улетает',
+    'трачу', 'расходую', 'покуп', 'оплат',
+)
+
+# Слова в запросе → ищем в категориях/сервисах операций
+FOOD_QUERY_KEYWORDS = (
+    'жрат', 'еда', 'еду', 'ест', 'продукт', 'кафе', 'ресторан', 'обед', 'ужин',
+    'завтрак', 'питан', 'фастфуд', 'доставк', 'перекус', 'столов', 'бургер', 'пицц',
+    'макдонald', 'kfc', 'суши', 'кофе', 'бар ',
+)
+
+# Подстроки в названиях категорий/сервисов из БД
+FOOD_CATEGORY_HINTS = (
+    'кафе', 'продукт', 'ресторан', 'еда', 'фастфуд', 'доставк', 'супермаркет',
+    'перекрёсток', 'перекресток', 'ашан', 'пятёроч', 'пятероч', 'магнит', 'lavka',
+    'кофе', 'food', 'coffee', 'grocery',
+)
+
 PERIOD_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r'(?:два|2)\s*года|за\s*2\s*год'), 'two_years'),
     (re.compile(r'пол(?:тора)?\s*года|1\.5\s*года'), 'eighteen_months'),
@@ -52,6 +72,19 @@ def _payment_chunk_text(payment: UpcomingPayment) -> str:
     )
 
 
+def _operation_metadata(operation: Operation) -> dict:
+    return {
+        'source': 'operation',
+        'operation_id': operation.id,
+        'operation_type': operation.operation_type,
+        'operation_date': operation_date_to_iso(operation.operation_date),
+        'category_name': operation.category.name if operation.category else '',
+        'service_name': operation.service.name if operation.service else '',
+        'note': (operation.note or '')[:120],
+        'is_credit': False,
+    }
+
+
 def _operation_chunk_text(operation: Operation) -> str:
     type_label = operation.get_operation_type_display()
     parts = [
@@ -68,6 +101,16 @@ def _operation_chunk_text(operation: Operation) -> str:
     if operation.note:
         parts.append(f'описание: {operation.note[:120]}')
     return '. '.join(parts) + '.'
+
+
+def is_spending_query(query: str) -> bool:
+    q = query.lower()
+    return any(hint in q for hint in SPENDING_QUERY_HINTS)
+
+
+def is_food_query(query: str) -> bool:
+    q = query.lower()
+    return any(hint in q for hint in FOOD_QUERY_KEYWORDS)
 
 
 def detect_query_period(query: str) -> tuple[date, date, str] | None:
@@ -94,6 +137,43 @@ def detect_query_period(query: str) -> tuple[date, date, str] | None:
             return today - timedelta(days=30), today, period_key
 
     return None
+
+
+def resolve_query_period(query: str) -> tuple[date, date, str] | None:
+    """Явный период в запросе или последние 30 дней для вопросов о тратах."""
+    explicit = detect_query_period(query)
+    if explicit:
+        return explicit
+    if is_spending_query(query) or is_food_query(query):
+        today = timezone.now().date()
+        return today - timedelta(days=30), today, 'default_month'
+    return None
+
+
+def _operation_searchable_text(chunk: dict) -> str:
+    metadata = chunk.get('metadata') or {}
+    parts = [
+        chunk.get('text', ''),
+        metadata.get('category_name', ''),
+        metadata.get('service_name', ''),
+        metadata.get('note', ''),
+    ]
+    return ' '.join(parts).lower()
+
+
+def _operation_matches_food_topic(chunk: dict) -> bool:
+    searchable = _operation_searchable_text(chunk)
+    return any(hint in searchable for hint in FOOD_CATEGORY_HINTS + FOOD_QUERY_KEYWORDS)
+
+
+def _filter_operations_by_topic(chunks: list[dict], query: str) -> list[dict]:
+    if is_food_query(query):
+        matched = [c for c in chunks if _operation_matches_food_topic(c)]
+        if matched:
+            return matched
+    if is_spending_query(query):
+        return [c for c in chunks if c.get('metadata', {}).get('operation_type') == 'expense']
+    return chunks
 
 
 def build_all_user_chunks(user_id: int) -> list[dict]:
@@ -137,13 +217,7 @@ def build_all_user_chunks(user_id: int) -> list[dict]:
             {
                 'chunk_id': f'{user_id}:operation:{operation.id}',
                 'text': _operation_chunk_text(operation),
-                'metadata': {
-                    'source': 'operation',
-                    'operation_id': operation.id,
-                    'operation_type': operation.operation_type,
-                    'operation_date': operation_date_to_iso(operation.operation_date),
-                    'is_credit': False,
-                },
+                'metadata': _operation_metadata(operation),
             }
         )
 
@@ -177,22 +251,34 @@ def _filter_operations_by_period(chunks: list[dict], date_from: date, date_to: d
     return result
 
 
+def get_relevant_operations(all_operations: list[dict], query: str, period: tuple[date, date, str] | None) -> list[dict]:
+    ops = list(all_operations)
+    if period:
+        date_from, date_to, period_key = period
+        ops = _filter_operations_by_period(ops, date_from, date_to)
+        logger.info('Operations after period %s: %s', period_key, len(ops))
+
+    ops = _filter_operations_by_topic(ops, query)
+
+    if len(ops) > settings.RAG_MAX_OPERATIONS:
+        ops = ops[: settings.RAG_MAX_OPERATIONS]
+
+    return ops
+
+
 def _db_fallback_chunks(user_id: int, query: str) -> list[dict]:
-    """Fallback напрямую из PostgreSQL, если Redis пуст."""
     chunks = build_all_user_chunks(user_id)
     if not chunks:
         return []
 
-    period = detect_query_period(query)
+    period = resolve_query_period(query)
     products = [c for c in chunks if c['metadata']['source'] == 'financial_product']
     payments = [c for c in chunks if c['metadata']['source'] == 'upcoming_payment']
     operations = [c for c in chunks if c['metadata']['source'] == 'operation']
+    operations = get_relevant_operations(operations, query, period)
 
-    if period:
-        date_from, date_to, _ = period
-        operations = _filter_operations_by_period(operations, date_from, date_to)
-    elif len(operations) > settings.RAG_MAX_OPERATIONS:
-        operations = operations[: settings.RAG_MAX_OPERATIONS]
+    if is_spending_query(query) or is_food_query(query):
+        return _merge_chunks(operations, products[:3])
 
     return _merge_chunks(products, payments, operations)
 
@@ -224,7 +310,9 @@ def sync_user_financial_chunks(user_id: int):
     store_chunks_batch(user_id, chunks, embeddings)
 
     stored = count_user_chunks(user_id)
-    get_redis().set(f'rag_synced:{user_id}', str(stored))
+    redis_conn = get_redis()
+    redis_conn.set(f'rag_synced:{user_id}', str(stored))
+    redis_conn.set(f'rag_meta_version:{user_id}', str(settings.RAG_METADATA_VERSION))
     logger.info('RAG index synced for user %s (%s chunks in Redis)', user_id, stored)
 
 
@@ -236,16 +324,24 @@ def ensure_user_chunks(user_id: int):
     synced_count = int(synced_raw) if synced_raw else 0
     actual_count = count_user_chunks(user_id)
     db_count = len(build_all_user_chunks(user_id))
+    meta_version = redis_conn.get(f'rag_meta_version:{user_id}')
+    expected_version = str(settings.RAG_METADATA_VERSION).encode()
 
-    if synced_count > 0 and actual_count == synced_count and actual_count == db_count:
+    if (
+        synced_count > 0
+        and actual_count == synced_count
+        and actual_count == db_count
+        and meta_version == expected_version
+    ):
         return
 
     logger.info(
-        'RAG resync user %s: redis=%s synced_flag=%s db=%s',
+        'RAG resync user %s: redis=%s synced=%s db=%s meta=%s',
         user_id,
         actual_count,
         synced_count,
         db_count,
+        meta_version,
     )
     sync_user_financial_chunks(user_id)
 
@@ -255,28 +351,31 @@ def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
 
     ensure_user_chunks(user_id)
 
-    period = detect_query_period(query)
+    period = resolve_query_period(query)
     product_chunks = fetch_user_chunks_by_source(user_id, 'financial_product')
     payment_chunks = fetch_user_chunks_by_source(user_id, 'upcoming_payment')
+    all_operations = fetch_user_chunks_by_source(user_id, 'operation')
+    relevant_operations = get_relevant_operations(all_operations, query, period)
     vector_hits = search_similar_chunks(query, user_id=user_id, top_k=settings.RAG_TOP_K)
 
-    if period:
-        date_from, date_to, period_key = period
-        all_operations = fetch_user_chunks_by_source(user_id, 'operation')
-        period_operations = _filter_operations_by_period(all_operations, date_from, date_to)
-        merged = _merge_chunks(product_chunks, payment_chunks, period_operations, vector_hits)
+    if is_spending_query(query) or is_food_query(query):
+        # Для вопросов о тратах — операции в приоритете, не все регулярные платежи
+        merged = _merge_chunks(relevant_operations, vector_hits, product_chunks[:3])
+    elif period:
+        merged = _merge_chunks(product_chunks, payment_chunks, relevant_operations, vector_hits)
     else:
-        merged = _merge_chunks(product_chunks, payment_chunks, vector_hits)
+        merged = _merge_chunks(product_chunks, payment_chunks, vector_hits, relevant_operations[:settings.RAG_MAX_OPERATIONS])
 
     if not merged:
         logger.warning('Redis RAG empty for user %s, using DB fallback', user_id)
         merged = _db_fallback_chunks(user_id, query)
 
     logger.info(
-        'RAG context user %s: products=%s payments=%s vector=%s total=%s',
+        'RAG user %s: period=%s food=%s ops=%s vector=%s total=%s',
         user_id,
-        len(product_chunks),
-        len(payment_chunks),
+        period[2] if period else None,
+        is_food_query(query),
+        len(relevant_operations),
         len(vector_hits),
         len(merged),
     )
