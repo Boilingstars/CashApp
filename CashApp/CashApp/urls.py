@@ -22,4 +22,5 @@ urlpatterns = [
     path('auth/', include('users.urls', namespace='users')),
     path('api/', include('finance.urls', namespace='finance')),
     path('analytics/', include('analytics.urls', namespace='analytics')),
+    path('chat/', include('chat.urls', namespace='chat')),
 ]

@@ -6,3 +6,7 @@ djangorestframework~=3.16.1
 psycopg2
 django-storages
 boto3~=1.42.46
+redis~=8.0.0
+numpy~=2.2.0
+openai~=1.82.0
+gunicorn~=23.0.0

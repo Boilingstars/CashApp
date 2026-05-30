@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
 from pathlib import Path
 import environ
 
@@ -42,9 +41,34 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # https
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# LLM API
+DEEPSEEK_API_KEY = env.str('DEEPSEEK_API_KEY', default='')
+DEEPSEEK_BASE_URL = env.str('DEEPSEEK_BASE_URL', default='https://api.deepseek.com')
+DEEPSEEK_MODEL = env.str('DEEPSEEK_MODEL', default='deepseek-chat')
+OPENAI_API_KEY = env.str('OPENAI_API_KEY', default='')
+
+# RAG / Chat
+RAG_TOP_K = env.int('RAG_TOP_K', default=5)
+MAX_CHAT_MESSAGE_LENGTH = env.int('MAX_CHAT_MESSAGE_LENGTH', default=4000)
+CHAT_EMBEDDING_CACHE_TTL = env.int('CHAT_EMBEDDING_CACHE_TTL', default=604800)
+
+# Дефолтный промпт
+DEFAULT_SYSTEM_PROMPT = (
+    "Ты — доброжелательный и заботливый финансовый советник. "
+    "Отвечай дружелюбно, поддерживай пользователя, будь вежлив и тактичен. "
+    "Опирайся на предоставленные финансовые данные пользователя. "
+    "Если информации недостаточно, честно скажи об этом и предложи уточнить детали."
+)
+
+# REDIS
+REDIS_HOST = env.str('REDIS_HOST', default='localhost')
+REDIS_PORT = env.int('REDIS_PORT', default=6379)
+REDIS_PASSWORD = env.str('REDIS_PASSWORD', default='')
+REDIS_DB = env.int('REDIS_DB', default=0)
 
 # Application definition
 
@@ -59,6 +83,7 @@ INSTALLED_APPS = [
     'users',
     'analytics',
     'finance',
+    'chat.apps.ChatConfig',
 ]
 
 MIDDLEWARE = [
@@ -142,7 +167,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/

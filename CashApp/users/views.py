@@ -1,17 +1,18 @@
-import django.contrib.auth
-import requests
 import json
+import logging
 
-from django.shortcuts import render
+import django.contrib.auth
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
-from .utils.jwt import generate_jwt_tokens
-from .utils.jwt import verify_jwt_token
+from .utils.jwt import generate_jwt_tokens, verify_jwt_token
 
-User = django.contrib.auth.get_user_model()
+User = get_user_model()
+logger = logging.getLogger(__name__)
 
-# Create your views here.
 
 def validate_user(request):
     auth_header = request.headers.get('Authorization')
@@ -31,8 +32,7 @@ def validate_user(request):
     except Exception as e:
         if str(e) == 'Token expired':
             return JsonResponse({'message': 'Access token expired'}, status=200)
-        else:
-            return JsonResponse({'error': 'Invalid token'}, status=400)
+        return JsonResponse({'error': 'Invalid token'}, status=400)
 
     try:
         user = User.objects.get(id=payload['user_id'])
@@ -45,11 +45,27 @@ def validate_user(request):
 
 
 @csrf_exempt
+@require_POST
 def auth_user(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-    user = User.objects.get(id=1)
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+
+    if not email or not password:
+        return JsonResponse({'error': 'Email и пароль обязательны'}, status=400)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Неверные учётные данные'}, status=401)
+
+    if not user.is_active or not user.check_password(password):
+        return JsonResponse({'error': 'Неверные учётные данные'}, status=401)
+
     jwt_tokens = generate_jwt_tokens(user)
 
     return JsonResponse({
@@ -59,49 +75,48 @@ def auth_user(request):
             'username': user.username,
             'phone': user.phone,
             'email': user.email,
-        }
+        },
     })
 
 
 @csrf_exempt
 def refresh_jwt_tokens(request):
-    """
-    POST /auth/refresh/
-    """
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        try:
-            refresh_token = data['refresh_token']
-            try:
-                payload = verify_jwt_token(refresh_token)
-                user_id = payload['user_id']
-                user = User.objects.get(id=user_id)
-                return JsonResponse(generate_jwt_tokens(user), status=200)
-            except Exception as e:
-                return JsonResponse({'error': f'{e}'}, status=400)
-        except KeyError:
-            return JsonResponse({'error': 'No data provided'}, status=400)
-    else:
+    if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    refresh_token = data.get('refresh_token')
+    if not refresh_token:
+        return JsonResponse({'error': 'No data provided'}, status=400)
+
+    try:
+        payload = verify_jwt_token(refresh_token)
+        if payload.get('type') != 'refresh':
+            return JsonResponse({'error': 'Invalid token type'}, status=400)
+        user = User.objects.get(id=payload['user_id'])
+        if not user.is_active:
+            return JsonResponse({'error': 'User inactive'}, status=401)
+        return JsonResponse(generate_jwt_tokens(user), status=200)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    except Exception as exc:
+        logger.warning('Token refresh failed: %s', exc)
+        return JsonResponse({'error': 'Invalid token'}, status=400)
 
 
 @csrf_exempt
 def get_user_profile(request):
-    """
-    GET /auth/get_user_profile/
-    """
     user = validate_user(request)
 
     if isinstance(user, JsonResponse):
         return user
 
-    params = {
+    return JsonResponse({
         'username': user.username,
         'phone': user.phone,
         'email': user.email,
-    }
-
-    return JsonResponse(params, status=200)
+    }, status=200)

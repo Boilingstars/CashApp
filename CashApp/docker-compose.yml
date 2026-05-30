@@ -4,8 +4,9 @@ services:
     container_name: django_app
     command: >
       sh -c "python manage.py migrate &&
+             python manage.py init_redis_index &&
              python manage.py collectstatic --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+             gunicorn CashApp.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
@@ -16,8 +17,11 @@ services:
       - .env
     environment:
       - POSTGRES_HOST=db
+      - REDIS_HOST=redis
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -26,10 +30,12 @@ services:
     container_name: postgres_db
     volumes:
       - postgres_data:/var/lib/postgresql
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: b3ewcdfg1
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -38,22 +44,41 @@ services:
     restart: unless-stopped
 
   nginx:
-      image: nginx:alpine
-      container_name: nginx_proxy
-      ports:
-        - "80:80"
-        - "443:443"
-      volumes:
-        - ./certbot/conf:/etc/letsencrypt:ro
-        - ./nginx/conf.d:/etc/nginx/conf.d:ro
-        - ./certbot/www:/var/www/certbot:ro
-        - static_volume:/static:ro
-        - media_volume:/media:ro
-      depends_on:
-        - web
-      restart: unless-stopped
+    image: nginx:alpine
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - static_volume:/static:ro
+      - media_volume:/media:ro
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: django_redis_stack
+    volumes:
+      - redis_data:/data
+    env_file:
+      - .env
+    environment:
+      REDIS_ARGS: --requirepass ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    mem_limit: 512m
 
 volumes:
   postgres_data:
   static_volume:
   media_volume:
+  redis_data:
