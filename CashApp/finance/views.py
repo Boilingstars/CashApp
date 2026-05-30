@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers, generics
@@ -7,6 +9,15 @@ from rest_framework.pagination import PageNumberPagination
 
 from .models import Operation, Category, Service, FinancialProduct
 from django.db.models import Q
+
+
+class FlexibleDateField(serializers.DateField):
+    """DateField, который принимает datetime из PostgreSQL."""
+
+    def to_representation(self, value):
+        if isinstance(value, datetime):
+            value = value.date()
+        return super().to_representation(value)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -31,6 +42,7 @@ class OperationSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     service = ServiceSerializer(read_only=True)
     account = FinancialProductSerializer(read_only=True)
+    operation_date = FlexibleDateField()
 
     class Meta:
         model = Operation
