@@ -2,11 +2,12 @@ import logging
 
 from django.conf import settings
 from django.db import transaction
-from openai import OpenAI
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from .llm_clients import get_chat_client
 
 from .indexing import ensure_user_chunks
 from .models import ChatMessage, ChatSession
@@ -81,13 +82,10 @@ class ChatMessageView(APIView):
             messages.append({'role': msg.role, 'content': msg.content})
         messages.append({'role': 'user', 'content': content})
 
-        if not settings.DEEPSEEK_API_KEY:
+        if not settings.LLM_API_KEY:
             return Response({'error': 'LLM API не настроен'}, status=503)
 
-        client = OpenAI(
-            api_key=settings.DEEPSEEK_API_KEY,
-            base_url=settings.DEEPSEEK_BASE_URL,
-        )
+        client = get_chat_client()
 
         try:
             with transaction.atomic():
@@ -105,7 +103,7 @@ class ChatMessageView(APIView):
                     logger.warning('Embedding cache failed: %s', exc)
 
                 response = client.chat.completions.create(
-                    model=settings.DEEPSEEK_MODEL,
+                    model=settings.LLM_CHAT_MODEL,
                     messages=messages,
                     temperature=0.7,
                     stream=False,

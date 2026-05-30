@@ -45,11 +45,17 @@ SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
-# LLM API
-DEEPSEEK_API_KEY = env.str('DEEPSEEK_API_KEY', default='')
-DEEPSEEK_BASE_URL = env.str('DEEPSEEK_BASE_URL', default='https://api.deepseek.com')
-DEEPSEEK_MODEL = env.str('DEEPSEEK_MODEL', default='deepseek-chat')
-OPENAI_API_KEY = env.str('OPENAI_API_KEY', default='')
+# OpenAI-compatible API (Artemox, OpenAI, DeepSeek через прокси и т.д.)
+LLM_API_KEY = env.str('LLM_API_KEY', default='')
+LLM_BASE_URL = env.str('LLM_BASE_URL', default='https://api.artemox.com/v1')
+LLM_CHAT_MODEL = env.str('LLM_CHAT_MODEL', default='deepseek-chat')
+LLM_EMBEDDING_MODEL = env.str('LLM_EMBEDDING_MODEL', default='text-embedding-3-small')
+
+# Обратная совместимость со старыми именами переменных в .env
+DEEPSEEK_API_KEY = env.str('DEEPSEEK_API_KEY', default='') or LLM_API_KEY
+DEEPSEEK_BASE_URL = env.str('DEEPSEEK_BASE_URL', default='') or LLM_BASE_URL
+DEEPSEEK_MODEL = env.str('DEEPSEEK_MODEL', default='') or LLM_CHAT_MODEL
+OPENAI_API_KEY = env.str('OPENAI_API_KEY', default='') or LLM_API_KEY
 
 # RAG / Chat
 RAG_TOP_K = env.int('RAG_TOP_K', default=5)

@@ -3,18 +3,18 @@ import logging
 
 import numpy as np
 from django.conf import settings
-from openai import OpenAI
 from redis import Redis
 from redis.commands.search.field import TagField, TextField, VectorField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
 from redis.commands.search.query import Query
 from redis.exceptions import ResponseError
 
+from .llm_clients import get_embedding_client
+
 logger = logging.getLogger(__name__)
 
 INDEX_NAME = 'idx:chunks'
 CHUNK_PREFIX = 'chunk:'
-EMBEDDING_MODEL = 'text-embedding-3-small'
 VECTOR_DIM = 1536
 
 _redis_conn = None
@@ -54,11 +54,14 @@ def get_embedding(text: str, cache_key: str | None = None) -> np.ndarray:
         if cached:
             return np.frombuffer(cached, dtype=np.float32)
 
-    if not settings.OPENAI_API_KEY:
-        raise ValueError('OPENAI_API_KEY не настроен')
+    if not settings.LLM_API_KEY:
+        raise ValueError('LLM_API_KEY не настроен (нужен для эмбеддингов через Artemox/OpenAI-compatible API)')
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    response = client.embeddings.create(input=text, model=EMBEDDING_MODEL)
+    client = get_embedding_client()
+    response = client.embeddings.create(
+        input=text,
+        model=settings.LLM_EMBEDDING_MODEL,
+    )
     embedding = np.array(response.data[0].embedding, dtype=np.float32)
 
     if cache_key:

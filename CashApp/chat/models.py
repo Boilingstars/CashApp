@@ -80,7 +80,7 @@ class ChatMessage(models.Model):
             'session_id': self.session_id,
             'rag_context': self.rag_context,
             'system_prompt': self.session.system_prompt,
-            'model': settings.DEEPSEEK_MODEL,
+            'model': settings.LLM_CHAT_MODEL,
         }
         hash_str = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
         return f'llm_response:{hash_str}'
