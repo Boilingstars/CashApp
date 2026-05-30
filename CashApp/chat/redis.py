@@ -9,6 +9,7 @@ from redis.commands.search.index_definition import IndexDefinition, IndexType
 from redis.commands.search.query import Query
 from redis.exceptions import ResponseError
 
+from .date_utils import operation_date_to_num
 from .embeddings import encode_text
 
 logger = logging.getLogger(__name__)
@@ -114,10 +115,7 @@ def store_chunk(
     if embedding is None:
         embedding = get_embedding(text, cache_key=f'emb:chunk:{chunk_id}')
 
-    operation_date = metadata.get('operation_date')
-    operation_date_num = 0
-    if operation_date:
-        operation_date_num = int(str(operation_date).replace('-', ''))
+    operation_date_num = operation_date_to_num(metadata.get('operation_date'))
 
     chunk_data = {
         'user_id': str(user_id),
@@ -139,10 +137,7 @@ def store_chunks_batch(user_id: int, chunks: list[dict], embeddings: np.ndarray)
     for chunk, embedding in zip(chunks, embeddings):
         chunk_id = chunk['chunk_id']
         metadata = chunk['metadata']
-        operation_date = metadata.get('operation_date')
-        operation_date_num = 0
-        if operation_date:
-            operation_date_num = int(str(operation_date).replace('-', ''))
+        operation_date_num = operation_date_to_num(metadata.get('operation_date'))
 
         chunk_data = {
             'user_id': str(user_id),

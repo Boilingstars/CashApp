@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from finance.models import FinancialProduct, Operation, ProductType, UpcomingPayment
 
+from .date_utils import operation_date_to_iso, parse_operation_date
+
 logger = logging.getLogger(__name__)
 
 CREDIT_PRODUCT_TYPES = {
@@ -140,7 +142,7 @@ def build_all_user_chunks(user_id: int) -> list[dict]:
                     'source': 'operation',
                     'operation_id': operation.id,
                     'operation_type': operation.operation_type,
-                    'operation_date': operation.operation_date.isoformat(),
+                    'operation_date': operation_date_to_iso(operation.operation_date),
                     'is_credit': False,
                 },
             }
@@ -167,10 +169,9 @@ def _filter_operations_by_period(chunks: list[dict], date_from: date, date_to: d
     for chunk in chunks:
         if chunk.get('metadata', {}).get('source') != 'operation':
             continue
-        op_date_str = chunk['metadata'].get('operation_date')
-        if not op_date_str:
+        op_date = parse_operation_date(chunk['metadata'].get('operation_date'))
+        if not op_date:
             continue
-        op_date = date.fromisoformat(op_date_str)
         if date_from <= op_date <= date_to:
             result.append(chunk)
     return result
@@ -202,9 +203,14 @@ def sync_user_financial_chunks(user_id: int):
 def ensure_user_chunks(user_id: int):
     from .redis import get_redis, user_has_chunks
 
-    if user_has_chunks(user_id) and get_redis().get(f'rag_synced:{user_id}'):
+    redis_conn = get_redis()
+    if user_has_chunks(user_id) and redis_conn.get(f'rag_synced:{user_id}'):
         return
-    sync_user_financial_chunks(user_id)
+    try:
+        sync_user_financial_chunks(user_id)
+    except Exception as exc:
+        redis_conn.delete(f'rag_synced:{user_id}')
+        raise exc
 
 
 def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
