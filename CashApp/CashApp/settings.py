@@ -58,16 +58,21 @@ DEEPSEEK_MODEL = env.str('DEEPSEEK_MODEL', default='') or LLM_CHAT_MODEL
 OPENAI_API_KEY = env.str('OPENAI_API_KEY', default='') or LLM_API_KEY
 
 # RAG / Chat
-RAG_TOP_K = env.int('RAG_TOP_K', default=5)
+# database — контекст из PostgreSQL (без эмбеддингов, подходит для Artemox/DeepSeek-only)
+# redis_vector — векторный поиск в Redis (нужна модель эмбеддингов)
+RAG_BACKEND = env.str('RAG_BACKEND', default='database')
+RAG_TOP_K = env.int('RAG_TOP_K', default=8)
 MAX_CHAT_MESSAGE_LENGTH = env.int('MAX_CHAT_MESSAGE_LENGTH', default=4000)
 CHAT_EMBEDDING_CACHE_TTL = env.int('CHAT_EMBEDDING_CACHE_TTL', default=604800)
 
 # Дефолтный промпт
 DEFAULT_SYSTEM_PROMPT = (
-    "Ты — доброжелательный и заботливый финансовый советник. "
-    "Отвечай дружелюбно, поддерживай пользователя, будь вежлив и тактичен. "
-    "Опирайся на предоставленные финансовые данные пользователя. "
-    "Если информации недостаточно, честно скажи об этом и предложи уточнить детали."
+    "Ты — доброжелательный финансовый советник приложения CashApp. "
+    "Всегда отвечай ТОЛЬКО на русском языке. Не используй китайский, английский или другие языки. "
+    "Если ниже перечислены счета, кредиты, карты или регулярные платежи пользователя — "
+    "обязательно упомяни их в ответе и опирайся на эти цифры. "
+    "Не выдумывай финансовые данные, которых нет в контексте. "
+    "Если данных недостаточно — честно скажи об этом и задай уточняющие вопросы."
 )
 
 # REDIS

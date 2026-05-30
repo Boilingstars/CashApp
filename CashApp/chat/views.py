@@ -1,17 +1,14 @@
 import logging
 
 from django.conf import settings
-from django.db import transaction
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .indexing import retrieve_rag_context
 from .llm_clients import get_chat_client
-
-from .indexing import ensure_user_chunks
 from .models import ChatMessage, ChatSession
-from .redis import cache_message_embedding, search_similar_chunks
 from .serializers import ChatMessageSerializer
 
 logger = logging.getLogger(__name__)
@@ -19,8 +16,13 @@ logger = logging.getLogger(__name__)
 
 def _build_rag_context_block(chunks: list[dict]) -> str:
     if not chunks:
-        return 'Данные пользователя: нет проиндексированной финансовой информации.'
-    lines = ['Данные пользователя (используй при ответе):']
+        return (
+            'Финансовые данные пользователя в системе не найдены. '
+            'Сообщи об этом и задай уточняющие вопросы.'
+        )
+    lines = [
+        'Финансовые данные пользователя (обязательно учитывай в ответе, ссылайся на конкретные счета и платежи):',
+    ]
     for chunk in chunks:
         lines.append(f'- {chunk["text"]}')
     return '\n'.join(lines)
@@ -30,7 +32,7 @@ def _compact_rag_context(chunks: list[dict]) -> list[dict]:
     return [
         {
             'chunk_id': chunk['chunk_id'],
-            'score': chunk['score'],
+            'score': chunk.get('score', 0),
             'text_snippet': chunk['text'][:200],
         }
         for chunk in chunks
@@ -65,12 +67,11 @@ class ChatMessageView(APIView):
                 session.title = content[:255]
                 session.save(update_fields=['title'])
 
-        rag_chunks = []
         try:
-            ensure_user_chunks(user.id)
-            rag_chunks = search_similar_chunks(content, user_id=user.id)
+            rag_chunks = retrieve_rag_context(user.id, content)
         except Exception as exc:
-            logger.error('RAG search failed for user %s: %s', user.id, exc)
+            logger.error('RAG context failed for user %s: %s', user.id, exc)
+            rag_chunks = []
 
         base_prompt = session.system_prompt or settings.DEFAULT_SYSTEM_PROMPT
         context_block = _build_rag_context_block(rag_chunks)
@@ -85,40 +86,32 @@ class ChatMessageView(APIView):
         if not settings.LLM_API_KEY:
             return Response({'error': 'LLM API не настроен'}, status=503)
 
-        client = get_chat_client()
+        user_message = ChatMessage.objects.create(
+            session=session,
+            role='user',
+            content=content,
+        )
 
         try:
-            with transaction.atomic():
-                user_message = ChatMessage.objects.create(
-                    session=session,
-                    role='user',
-                    content=content,
-                )
-
-                try:
-                    embedding_key = cache_message_embedding(user_message.id, user.id, content)
-                    user_message.embedding_key = embedding_key
-                    user_message.save(update_fields=['embedding_key'])
-                except Exception as exc:
-                    logger.warning('Embedding cache failed: %s', exc)
-
-                response = client.chat.completions.create(
-                    model=settings.LLM_CHAT_MODEL,
-                    messages=messages,
-                    temperature=0.7,
-                    stream=False,
-                )
-                assistant_content = response.choices[0].message.content
-
-                assistant_message = ChatMessage.objects.create(
-                    session=session,
-                    role='assistant',
-                    content=assistant_content,
-                    rag_context=_compact_rag_context(rag_chunks),
-                )
+            client = get_chat_client()
+            response = client.chat.completions.create(
+                model=settings.LLM_CHAT_MODEL,
+                messages=messages,
+                temperature=0.3,
+                stream=False,
+            )
+            assistant_content = response.choices[0].message.content
         except Exception as exc:
-            logger.error('DeepSeek API error: %s', exc)
+            logger.error('LLM API error: %s', exc)
+            user_message.delete()
             return Response({'error': 'Ошибка при обращении к нейросети'}, status=502)
+
+        assistant_message = ChatMessage.objects.create(
+            session=session,
+            role='assistant',
+            content=assistant_content,
+            rag_context=_compact_rag_context(rag_chunks),
+        )
 
         serializer = ChatMessageSerializer(assistant_message)
         return Response(
