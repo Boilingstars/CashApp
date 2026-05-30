@@ -24,7 +24,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 class FinancialProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = FinancialProduct
-        fields = ['id', 'serial_number', 'bank_name', 'custom_name', 'currency_code']
+        fields = ['id', 'serial_number', 'bank_name', 'amount', 'custom_name', 'product_type', 'currency_code']
 
 
 class OperationSerializer(serializers.ModelSerializer):
@@ -139,7 +139,8 @@ class OperationsAPIView(ListAPIView):
     pagination_class = SmallResultsPagination
 
     def get_queryset(self):
-        return Operation.objects.filter(user=self.request.user)
+        user = self.request.user
+        return Category.objects.filter(Q(user=user) | Q(user__isnull=True))
 
 
 class ServiceAPIView(ListAPIView):
