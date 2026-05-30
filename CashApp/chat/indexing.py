@@ -14,16 +14,6 @@ CREDIT_PRODUCT_TYPES = {
     ProductType.LOAN,
 }
 
-CREDIT_QUERY_HINTS = (
-    'кредит', 'займ', 'loan', 'долг', 'ипотек', 'заём', 'заем', 'рассроч', 'macbook', 'макбук',
-)
-PAYMENT_QUERY_HINTS = ('платёж', 'платеж', 'ежемесяч', 'подписк', 'оплат', 'списан')
-OPERATION_QUERY_HINTS = (
-    'операц', 'трат', 'расход', 'доход', 'перевод', 'покуп', 'истори', ' транзак',
-    'потрат', 'заработ', 'получил', 'потрати',
-)
-
-# Порядок важен: более длинные периоды проверяются первыми.
 PERIOD_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r'(?:два|2)\s*года|за\s*2\s*год'), 'two_years'),
     (re.compile(r'пол(?:тора)?\s*года|1\.5\s*года'), 'eighteen_months'),
@@ -72,20 +62,13 @@ def _operation_chunk_text(operation: Operation) -> str:
         parts.append(f'сервис «{operation.service.name}»')
     if operation.account:
         account_name = operation.account.custom_name or operation.account.get_product_type_display()
-        parts.append(
-            f'счёт «{account_name}» ({operation.account.get_bank_name_display()})'
-        )
+        parts.append(f'счёт «{account_name}» ({operation.account.get_bank_name_display()})')
     if operation.note:
         parts.append(f'описание: {operation.note[:120]}')
     return '. '.join(parts) + '.'
 
 
-def _query_words(query: str) -> set[str]:
-    return {word for word in re.findall(r'[\wёа-я]+', query.lower()) if len(word) > 2}
-
-
 def detect_query_period(query: str) -> tuple[date, date, str] | None:
-    """Определить временной промежуток из текста запроса пользователя."""
     query_lower = query.lower()
     today = timezone.now().date()
 
@@ -111,39 +94,14 @@ def detect_query_period(query: str) -> tuple[date, date, str] | None:
     return None
 
 
-def _score_chunk(chunk: dict, query_lower: str, words: set[str]) -> float:
-    text_lower = chunk['text'].lower()
-    score = float(sum(1 for word in words if word in text_lower))
-
-    metadata = chunk.get('metadata') or {}
-    source = metadata.get('source')
-
-    if metadata.get('is_credit') and any(hint in query_lower for hint in CREDIT_QUERY_HINTS):
-        score += 10
-    if source == 'upcoming_payment' and any(hint in query_lower for hint in PAYMENT_QUERY_HINTS):
-        score += 5
-    if source == 'operation' and any(hint in query_lower for hint in OPERATION_QUERY_HINTS):
-        score += 5
-    if metadata.get('is_credit'):
-        score += 1
-
-    return score
-
-
-def _with_scores(chunks: list[dict], query: str) -> list[dict]:
-    query_lower = query.lower()
-    words = _query_words(query)
-    return [{**chunk, 'score': _score_chunk(chunk, query_lower, words)} for chunk in chunks]
-
-
-def get_static_chunks(user_id: int) -> list[dict]:
-    """Счета, карты, кредиты и предстоящие платежи — всегда полностью."""
+def build_all_user_chunks(user_id: int) -> list[dict]:
+    """Собрать все записи пользователя для индексации в Redis."""
     chunks = []
 
     for product in FinancialProduct.objects.filter(user_id=user_id):
         chunks.append(
             {
-                'chunk_id': f'db:product:{product.id}',
+                'chunk_id': f'{user_id}:product:{product.id}',
                 'text': _product_chunk_text(product),
                 'metadata': {
                     'source': 'financial_product',
@@ -151,7 +109,6 @@ def get_static_chunks(user_id: int) -> list[dict]:
                     'product_type': product.product_type,
                     'is_credit': product.product_type in CREDIT_PRODUCT_TYPES,
                 },
-                'score': 0.0,
             }
         )
 
@@ -159,187 +116,123 @@ def get_static_chunks(user_id: int) -> list[dict]:
     for payment in payments:
         chunks.append(
             {
-                'chunk_id': f'db:payment:{payment.id}',
+                'chunk_id': f'{user_id}:payment:{payment.id}',
                 'text': _payment_chunk_text(payment),
                 'metadata': {
                     'source': 'upcoming_payment',
                     'payment_id': payment.id,
                     'is_credit': False,
                 },
-                'score': 0.0,
+            }
+        )
+
+    operations = (
+        Operation.objects.filter(user_id=user_id)
+        .select_related('category', 'service', 'account')
+        .order_by('-operation_date', '-id')
+    )
+    for operation in operations:
+        chunks.append(
+            {
+                'chunk_id': f'{user_id}:operation:{operation.id}',
+                'text': _operation_chunk_text(operation),
+                'metadata': {
+                    'source': 'operation',
+                    'operation_id': operation.id,
+                    'operation_type': operation.operation_type,
+                    'operation_date': operation.operation_date.isoformat(),
+                    'is_credit': False,
+                },
             }
         )
 
     return chunks
 
 
-def get_operation_chunks(user_id: int, query: str) -> list[dict]:
-    """
-    История операций.
-    Без периода в запросе — максимум RAG_MAX_OPERATIONS (по умолчанию 21), самые релевантные/свежие.
-    С периодом (месяц, год, два года…) — все операции за этот интервал.
-    """
-    period = detect_query_period(query)
-    max_operations = settings.RAG_MAX_OPERATIONS
-
-    qs = (
-        Operation.objects.filter(user_id=user_id)
-        .select_related('category', 'service', 'account')
-        .order_by('-operation_date', '-id')
-    )
-
-    if period:
-        date_from, date_to, period_key = period
-        qs = qs.filter(operation_date__gte=date_from, operation_date__lte=date_to)
-        logger.info(
-            'RAG operations for user %s: period=%s (%s — %s), no limit',
-            user_id,
-            period_key,
-            date_from,
-            date_to,
-        )
-    else:
-        qs = qs[: max(max_operations * 3, max_operations)]
-
-    operations = list(qs)
-    if not operations:
-        return []
-
-    chunks = [
-        {
-            'chunk_id': f'db:operation:{operation.id}',
-            'text': _operation_chunk_text(operation),
-            'metadata': {
-                'source': 'operation',
-                'operation_id': operation.id,
-                'operation_type': operation.operation_type,
-                'operation_date': operation.operation_date.isoformat(),
-                'is_credit': False,
-            },
-            'score': 0.0,
-        }
-        for operation in operations
-    ]
-
-    if period:
-        return _with_scores(chunks, query)
-
-    if len(chunks) <= max_operations:
-        return _with_scores(chunks, query)
-
-    ranked = sorted(
-        _with_scores(chunks, query),
-        key=lambda chunk: (chunk['score'], chunk['metadata']['operation_date']),
-        reverse=True,
-    )
-    return ranked[:max_operations]
+def _merge_chunks(*chunk_lists: list[dict]) -> list[dict]:
+    merged = []
+    seen = set()
+    for chunk_list in chunk_lists:
+        for chunk in chunk_list:
+            chunk_id = chunk['chunk_id']
+            if chunk_id in seen:
+                continue
+            seen.add(chunk_id)
+            merged.append(chunk)
+    return merged
 
 
-def get_financial_chunks_from_db(user_id: int, query: str = '') -> list[dict]:
-    """Собрать полный финансовый контекст пользователя из PostgreSQL."""
-    return get_static_chunks(user_id) + get_operation_chunks(user_id, query)
+def _filter_operations_by_period(chunks: list[dict], date_from: date, date_to: date) -> list[dict]:
+    result = []
+    for chunk in chunks:
+        if chunk.get('metadata', {}).get('source') != 'operation':
+            continue
+        op_date_str = chunk['metadata'].get('operation_date')
+        if not op_date_str:
+            continue
+        op_date = date.fromisoformat(op_date_str)
+        if date_from <= op_date <= date_to:
+            result.append(chunk)
+    return result
 
 
-def rank_chunks_for_query(chunks: list[dict], query: str, top_k: int | None = None) -> list[dict]:
-    """Ранжирование, если общий контекст превышает лимит (редкий случай)."""
-    top_k = top_k or settings.RAG_TOP_K
+def sync_user_financial_chunks(user_id: int):
+    """Переиндексировать все записи пользователя: эмбеддинги + Redis."""
+    from .embeddings import encode_texts
+    from .redis import create_vector_index, delete_user_chunks, get_redis, store_chunks_batch
+
+    create_vector_index()
+    chunks = build_all_user_chunks(user_id)
+    delete_user_chunks(user_id)
+
     if not chunks:
-        return []
+        logger.info('No financial data to index for user %s', user_id)
+        return
 
-    scored = _with_scores(chunks, query)
-    ranked = sorted(scored, key=lambda chunk: chunk['score'], reverse=True)
-    return ranked[:top_k]
+    texts = [chunk['text'] for chunk in chunks]
+    logger.info('Encoding %s chunks for user %s', len(texts), user_id)
+
+    embeddings = encode_texts(texts, batch_size=settings.EMBEDDING_BATCH_SIZE)
+    store_chunks_batch(user_id, chunks, embeddings)
+
+    get_redis().set(f'rag_synced:{user_id}', str(len(chunks)))
+    logger.info('RAG index synced for user %s (%s chunks)', user_id, len(chunks))
+
+
+def ensure_user_chunks(user_id: int):
+    from .redis import get_redis, user_has_chunks
+
+    if user_has_chunks(user_id) and get_redis().get(f'rag_synced:{user_id}'):
+        return
+    sync_user_financial_chunks(user_id)
 
 
 def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
     """
-    Получить RAG-контекст для запроса.
-    По умолчанию — из БД (без эмбеддингов). Redis vector search — опционально.
+    1. Синхронизировать все записи пользователя в Redis (если ещё нет).
+    2. Закодировать запрос той же моделью.
+    3. KNN-поиск в Redis по user_id.
+    4. При указании периода — добавить все операции за интервал.
     """
-    if settings.RAG_BACKEND == 'redis_vector':
-        from .redis import search_similar_chunks
+    from .redis import fetch_user_chunks_by_source, search_similar_chunks
 
-        try:
-            sync_user_financial_chunks(user_id)
-            vector_chunks = search_similar_chunks(query, user_id=user_id)
-            if vector_chunks:
-                return vector_chunks
-        except Exception as exc:
-            logger.warning('Vector RAG unavailable for user %s: %s', user_id, exc)
-
-    chunks = get_financial_chunks_from_db(user_id, query)
-    if not chunks:
-        return []
+    ensure_user_chunks(user_id)
 
     period = detect_query_period(query)
-    if period or len(chunks) <= settings.RAG_TOP_K:
-        return _with_scores(chunks, query)
+    product_chunks = fetch_user_chunks_by_source(user_id, 'financial_product')
+    payment_chunks = fetch_user_chunks_by_source(user_id, 'upcoming_payment')
+    vector_hits = search_similar_chunks(query, user_id=user_id, top_k=settings.RAG_TOP_K)
 
-    return rank_chunks_for_query(chunks, query)
-
-
-def sync_user_financial_chunks(user_id: int):
-    """Индексация в Redis — только при RAG_BACKEND=redis_vector."""
-    if settings.RAG_BACKEND != 'redis_vector':
-        return
-
-    from .redis import create_vector_index, delete_user_chunks, get_redis, store_chunk
-
-    create_vector_index()
-    delete_user_chunks(user_id)
-
-    indexed = 0
-
-    def _index_chunk(chunk_id: str, text: str, metadata: dict):
-        nonlocal indexed
-        try:
-            store_chunk(chunk_id, user_id, text, metadata)
-            indexed += 1
-        except Exception as exc:
-            logger.error('Failed to index chunk %s: %s', chunk_id, exc)
-
-    for product in FinancialProduct.objects.filter(user_id=user_id):
-        _index_chunk(
-            f'{user_id}:product:{product.id}',
-            _product_chunk_text(product),
-            {
-                'source': 'financial_product',
-                'product_id': product.id,
-                'product_type': product.product_type,
-                'is_credit': product.product_type in CREDIT_PRODUCT_TYPES,
-            },
+    if period:
+        date_from, date_to, period_key = period
+        all_operations = fetch_user_chunks_by_source(user_id, 'operation')
+        period_operations = _filter_operations_by_period(all_operations, date_from, date_to)
+        logger.info(
+            'RAG period=%s for user %s: %s operations in range',
+            period_key,
+            user_id,
+            len(period_operations),
         )
+        return _merge_chunks(product_chunks, payment_chunks, period_operations, vector_hits)
 
-    for payment in UpcomingPayment.objects.filter(user_id=user_id).select_related('service', 'account'):
-        _index_chunk(
-            f'{user_id}:payment:{payment.id}',
-            _payment_chunk_text(payment),
-            {'source': 'upcoming_payment', 'payment_id': payment.id},
-        )
-
-    for operation in (
-        Operation.objects.filter(user_id=user_id)
-        .select_related('category', 'service', 'account')
-        .order_by('-operation_date')[: settings.RAG_MAX_OPERATIONS]
-    ):
-        _index_chunk(
-            f'{user_id}:operation:{operation.id}',
-            _operation_chunk_text(operation),
-            {
-                'source': 'operation',
-                'operation_id': operation.id,
-                'operation_type': operation.operation_type,
-            },
-        )
-
-    if indexed:
-        get_redis().set(f'rag_synced:{user_id}', '1')
-        logger.info('RAG vector index synced for user %s (%s chunks)', user_id, indexed)
-    else:
-        get_redis().delete(f'rag_synced:{user_id}')
-
-
-def ensure_user_chunks(user_id: int):
-    if settings.RAG_BACKEND != 'redis_vector':
-        return
-    sync_user_financial_chunks(user_id)
+    return _merge_chunks(product_chunks, payment_chunks, vector_hits)

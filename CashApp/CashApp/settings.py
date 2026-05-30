@@ -56,10 +56,16 @@ DEEPSEEK_BASE_URL = env.str('DEEPSEEK_BASE_URL', default='') or LLM_BASE_URL
 DEEPSEEK_MODEL = env.str('DEEPSEEK_MODEL', default='') or LLM_CHAT_MODEL
 OPENAI_API_KEY = env.str('OPENAI_API_KEY', default='') or LLM_API_KEY
 
-# RAG
-RAG_BACKEND = env.str('RAG_BACKEND', default='database')
+# RAG / Embeddings
+RAG_BACKEND = env.str('RAG_BACKEND', default='redis_vector')
 RAG_TOP_K = env.int('RAG_TOP_K', default=8)
 RAG_MAX_OPERATIONS = env.int('RAG_MAX_OPERATIONS', default=21)
+EMBEDDING_MODEL_NAME = env.str(
+    'EMBEDDING_MODEL_NAME',
+    default='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+)
+EMBEDDING_VECTOR_DIM = env.int('EMBEDDING_VECTOR_DIM', default=384)
+EMBEDDING_BATCH_SIZE = env.int('EMBEDDING_BATCH_SIZE', default=32)
 MAX_CHAT_MESSAGE_LENGTH = env.int('MAX_CHAT_MESSAGE_LENGTH', default=4000)
 CHAT_EMBEDDING_CACHE_TTL = env.int('CHAT_EMBEDDING_CACHE_TTL', default=604800)
 

@@ -1,29 +1,35 @@
-FROM python:3.13-alpine
+FROM python:3.13-slim
 
-RUN apk update && apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    musl-dev \
-    postgresql-dev \
-    python3-dev \
-    libffi-dev \
-    openssl-dev \
-    cargo \
-    && rm -rf /var/cache/apk/*
+    g++ \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \ PYTHONUNBUFFERED=1 \ PIP_NO_CACHE_DIR=1 \ PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    TOKENIZERS_PARALLELISM=false \
+    HF_HOME=/app/.cache/huggingface
 
 COPY requirements.txt .
 
 RUN pip install --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
+
+# Предзагрузка модели эмбеддингов при сборке образа
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')"
 
 COPY . .
 
-RUN adduser --disabled-password --gecos '' django-user && \
+RUN chmod +x /app/entrypoint.sh && \
+    adduser --disabled-password --gecos '' django-user && \
     chown -R django-user:django-user /app
 
 USER django-user
 
-CMD ["gunicorn", "CashApp.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
+ENTRYPOINT ["/app/entrypoint.sh"]

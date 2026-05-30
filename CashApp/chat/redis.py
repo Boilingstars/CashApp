@@ -4,18 +4,17 @@ import logging
 import numpy as np
 from django.conf import settings
 from redis import Redis
-from redis.commands.search.field import TagField, TextField, VectorField
+from redis.commands.search.field import NumericField, TagField, TextField, VectorField
 from redis.commands.search.index_definition import IndexDefinition, IndexType
 from redis.commands.search.query import Query
 from redis.exceptions import ResponseError
 
-from .llm_clients import get_embedding_client
+from .embeddings import encode_text
 
 logger = logging.getLogger(__name__)
 
 INDEX_NAME = 'idx:chunks'
 CHUNK_PREFIX = 'chunk:'
-VECTOR_DIM = 1536
 
 _redis_conn = None
 
@@ -46,7 +45,7 @@ def _parse_metadata(raw) -> dict:
 
 
 def get_embedding(text: str, cache_key: str | None = None) -> np.ndarray:
-    """Получить эмбеддинг текста; опционально кешировать в Redis."""
+    """Локальный эмбеддинг через sentence-transformers; опционально кеш в Redis."""
     redis_conn = get_redis()
 
     if cache_key:
@@ -54,43 +53,37 @@ def get_embedding(text: str, cache_key: str | None = None) -> np.ndarray:
         if cached:
             return np.frombuffer(cached, dtype=np.float32)
 
-    if not settings.LLM_API_KEY:
-        raise ValueError('LLM_API_KEY не настроен (нужен для эмбеддингов через Artemox/OpenAI-compatible API)')
-
-    client = get_embedding_client()
-    response = client.embeddings.create(
-        input=text,
-        model=settings.LLM_EMBEDDING_MODEL,
-    )
-    embedding = np.array(response.data[0].embedding, dtype=np.float32)
+    embedding = encode_text(text)
 
     if cache_key:
-        ttl = getattr(settings, 'CHAT_EMBEDDING_CACHE_TTL', 604800)
-        redis_conn.set(cache_key, embedding.tobytes(), ex=ttl)
+        redis_conn.set(cache_key, embedding.tobytes(), ex=settings.CHAT_EMBEDDING_CACHE_TTL)
 
     return embedding
 
 
 def create_vector_index(force: bool = False):
-    """Создать индекс RediSearch для векторного поиска по чанкам."""
+    """Создать или пересоздать индекс RediSearch под текущую размерность эмбеддингов."""
     redis_conn = get_redis()
     index = redis_conn.ft(INDEX_NAME)
+    expected_dim = settings.EMBEDDING_VECTOR_DIM
 
     if force:
         try:
             index.dropindex(delete_documents=False)
         except ResponseError:
             pass
-
-    try:
-        index.info()
-        logger.info('Redis vector index already exists')
-        return
-    except ResponseError:
-        pass
+    else:
+        try:
+            index.info()
+            logger.info('Redis vector index already exists')
+            return
+        except ResponseError:
+            pass
 
     schema = (
         TagField('$.user_id', as_name='user_id'),
+        TagField('$.source', as_name='source'),
+        NumericField('$.operation_date_num', as_name='operation_date_num'),
         TextField('$.text', as_name='text'),
         TextField('$.metadata', as_name='metadata'),
         VectorField(
@@ -98,7 +91,7 @@ def create_vector_index(force: bool = False):
             'FLAT',
             {
                 'TYPE': 'FLOAT32',
-                'DIM': VECTOR_DIM,
+                'DIM': expected_dim,
                 'DISTANCE_METRIC': 'COSINE',
             },
             as_name='embedding',
@@ -106,15 +99,30 @@ def create_vector_index(force: bool = False):
     )
     definition = IndexDefinition(prefix=[CHUNK_PREFIX], index_type=IndexType.JSON)
     index.create_index(schema, definition=definition)
-    logger.info('Redis vector index created')
+    logger.info('Redis vector index created (dim=%s)', expected_dim)
 
 
-def store_chunk(chunk_id: str, user_id: int, text: str, metadata: dict):
-    """Сохранить чанк с эмбеддингом, привязанный к пользователю."""
+def store_chunk(
+    chunk_id: str,
+    user_id: int,
+    text: str,
+    metadata: dict,
+    embedding: np.ndarray | None = None,
+):
+    """Сохранить чанк с эмбеддингом в Redis JSON."""
     redis_conn = get_redis()
-    embedding = get_embedding(text, cache_key=f'emb:chunk:{chunk_id}')
+    if embedding is None:
+        embedding = get_embedding(text, cache_key=f'emb:chunk:{chunk_id}')
+
+    operation_date = metadata.get('operation_date')
+    operation_date_num = 0
+    if operation_date:
+        operation_date_num = int(str(operation_date).replace('-', ''))
+
     chunk_data = {
         'user_id': str(user_id),
+        'source': metadata.get('source', 'unknown'),
+        'operation_date_num': operation_date_num,
         'text': text,
         'metadata': json.dumps(metadata, ensure_ascii=False),
         'embedding': embedding.tolist(),
@@ -122,13 +130,38 @@ def store_chunk(chunk_id: str, user_id: int, text: str, metadata: dict):
     redis_conn.json().set(f'{CHUNK_PREFIX}{chunk_id}', '$', chunk_data)
 
 
+def store_chunks_batch(user_id: int, chunks: list[dict], embeddings: np.ndarray):
+    """Пакетная запись чанков с уже посчитанными эмбеддингами."""
+    if len(chunks) != len(embeddings):
+        raise ValueError('chunks and embeddings length mismatch')
+
+    pipe = get_redis().pipeline()
+    for chunk, embedding in zip(chunks, embeddings):
+        chunk_id = chunk['chunk_id']
+        metadata = chunk['metadata']
+        operation_date = metadata.get('operation_date')
+        operation_date_num = 0
+        if operation_date:
+            operation_date_num = int(str(operation_date).replace('-', ''))
+
+        chunk_data = {
+            'user_id': str(user_id),
+            'source': metadata.get('source', 'unknown'),
+            'operation_date_num': operation_date_num,
+            'text': chunk['text'],
+            'metadata': json.dumps(metadata, ensure_ascii=False),
+            'embedding': np.asarray(embedding, dtype=np.float32).tolist(),
+        }
+        pipe.json().set(f'{CHUNK_PREFIX}{chunk_id}', '$', chunk_data)
+    pipe.execute()
+
+
 def delete_user_chunks(user_id: int):
-    """Удалить все чанки пользователя из Redis."""
     redis_conn = get_redis()
     pattern = f'{CHUNK_PREFIX}{user_id}:*'
     cursor = 0
     while True:
-        cursor, keys = redis_conn.scan(cursor, match=pattern, count=100)
+        cursor, keys = redis_conn.scan(cursor, match=pattern, count=200)
         if keys:
             redis_conn.delete(*keys)
         if cursor == 0:
@@ -147,16 +180,16 @@ def user_has_chunks(user_id: int) -> bool:
 
 
 def search_similar_chunks(query_text: str, user_id: int, top_k: int | None = None) -> list[dict]:
-    """Найти релевантные чанки только для указанного пользователя."""
+    """KNN-поиск по эмбеддингу запроса среди чанков пользователя."""
     redis_conn = get_redis()
     top_k = top_k or settings.RAG_TOP_K
-    query_embedding = get_embedding(query_text)
+    query_embedding = get_embedding(query_text, cache_key=f'emb:query:{user_id}:{hash(query_text)}')
     binary_vector = query_embedding.tobytes()
 
     q = (
         Query(f'(@user_id:{{{user_id}}})=>[KNN {top_k} @embedding $vec AS score]')
         .sort_by('score')
-        .return_fields('text', 'metadata', 'score')
+        .return_fields('text', 'metadata', 'source', 'score')
         .paging(0, top_k)
         .dialect(2)
     )
@@ -185,8 +218,29 @@ def search_similar_chunks(query_text: str, user_id: int, top_k: int | None = Non
     return chunks
 
 
-def cache_message_embedding(message_id: int, user_id: int, text: str) -> str:
-    """Закешировать эмбеддинг сообщения; вернуть ключ кеша."""
-    cache_key = f'emb:msg:{user_id}:{message_id}'
-    get_embedding(text, cache_key=cache_key)
-    return cache_key
+def fetch_user_chunks_by_source(user_id: int, source: str) -> list[dict]:
+    """Получить все чанки пользователя указанного типа (для периодных операций)."""
+    redis_conn = get_redis()
+    q = Query(f'@user_id:{{{user_id}}} @source:{{{source}}}').return_fields('text', 'metadata').paging(0, 10000).dialect(2)
+    try:
+        results = redis_conn.ft(INDEX_NAME).search(q)
+    except ResponseError as exc:
+        logger.error('Redis fetch by source failed: %s', exc)
+        return []
+
+    chunks = []
+    for doc in results.docs:
+        doc_id = doc.id.decode() if isinstance(doc.id, bytes) else doc.id
+        text = doc.text.decode() if isinstance(doc.text, bytes) else doc.text
+        metadata_raw = doc.metadata
+        if isinstance(metadata_raw, bytes):
+            metadata_raw = metadata_raw.decode()
+        chunks.append(
+            {
+                'chunk_id': doc_id,
+                'text': text,
+                'metadata': _parse_metadata(metadata_raw),
+                'score': 0.0,
+            }
+        )
+    return chunks

@@ -29,7 +29,10 @@ echo "==> Running migrations..."
 python manage.py migrate --noinput
 
 echo "==> Initializing Redis index..."
-python manage.py init_redis_index || echo "WARNING: Redis index init failed, gunicorn will still start."
+python manage.py init_redis_index --recreate-if-dim-changed || echo "WARNING: Redis index init failed."
+
+echo "==> Warming up embedding model..."
+python -c "from chat.embeddings import warmup_embedding_model; warmup_embedding_model()" || echo "WARNING: Embedding warmup failed."
 
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput
@@ -39,5 +42,6 @@ exec gunicorn CashApp.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 2 \
     --timeout 300 \
+    --preload \
     --access-logfile - \
     --error-logfile -
