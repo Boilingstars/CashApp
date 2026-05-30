@@ -140,7 +140,11 @@ class OperationsAPIView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Category.objects.filter(Q(user=user) | Q(user__isnull=True))
+        return (
+            Operation.objects.filter(user=user)
+            .select_related('category', 'service', 'account')
+            .order_by('-operation_date', '-operation_time', '-id')
+        )
 
 
 class ServiceAPIView(ListAPIView):
