@@ -30,7 +30,7 @@ services:
   worker:
     build: .
     container_name: django_worker
-    entrypoint: ["/app/entrypoint-worker.sh"]
+    entrypoint: ["sh", "/app/entrypoint-worker.sh"]
     volumes:
       - .:/app
       - model_cache:/app/.cache
