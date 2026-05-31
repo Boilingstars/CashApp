@@ -188,22 +188,51 @@ class FinancialProductAPIView(ListAPIView):
 
 class OperationWriteSerializer(serializers.ModelSerializer):
     service_id = serializers.PrimaryKeyRelatedField(
-        queryset=Service.objects.all(), source='service', required=False, allow_null=True
+        queryset=Service.objects.none(),
+        source='service',
+        required=False,
+        allow_null=True,
     )
     category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), source='category', required=False, allow_null=True
+        queryset=Category.objects.none(),
+        source='category',
+        required=False,
+        allow_null=True,
     )
     account_id = serializers.PrimaryKeyRelatedField(
-        queryset=FinancialProduct.objects.all(), source='account', required=False, allow_null=True
+        queryset=FinancialProduct.objects.none(),
+        source='account',
+        required=False,
+        allow_null=True,
     )
+    operation_date = FlexibleDateField()
 
     class Meta:
         model = Operation
         fields = [
             'id', 'operation_type', 'currency_code', 'amount', 'note',
-            'operation_date', 'operation_time', 'service_id', 'category_id', 'account_id'
+            'operation_date', 'operation_time', 'service_id', 'category_id', 'account_id',
         ]
         read_only_fields = ['id']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return
+        user = request.user
+        self.fields['service_id'].queryset = Service.objects.filter(
+            Q(user=user) | Q(user__isnull=True)
+        )
+        self.fields['category_id'].queryset = Category.objects.filter(
+            Q(user=user) | Q(user__isnull=True)
+        )
+        self.fields['account_id'].queryset = FinancialProduct.objects.filter(user=user)
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Сумма должна быть больше нуля.')
+        return value
 
 
 class FinancialProductWriteSerializer(serializers.ModelSerializer):
@@ -231,6 +260,13 @@ class OperationCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_create(write_serializer)
+        read_serializer = OperationSerializer(write_serializer.instance)
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
 
 class OperationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Operation.objects.all()
@@ -242,10 +278,21 @@ class OperationDetailView(generics.RetrieveUpdateDestroyAPIView):
         return OperationSerializer
 
     def get_queryset(self):
-        return Operation.objects.filter(user=self.request.user)
+        return Operation.objects.filter(user=self.request.user).select_related(
+            'category', 'service', 'account'
+        )
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        write_serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_update(write_serializer)
+        read_serializer = OperationSerializer(write_serializer.instance)
+        return Response(read_serializer.data)
 
 
 class FinancialProductCreateView(generics.CreateAPIView):
