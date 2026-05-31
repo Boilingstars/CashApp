@@ -32,4 +32,6 @@ RUN chmod +x /app/entrypoint.sh /app/entrypoint-worker.sh && \
 
 USER django-user
 
+RUN chmod +x /app/entrypoint-worker.sh
+
 ENTRYPOINT ["/app/entrypoint.sh"]
