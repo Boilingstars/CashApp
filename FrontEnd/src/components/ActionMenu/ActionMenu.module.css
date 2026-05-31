@@ -8,6 +8,7 @@
 .overlay {
   position: absolute;
   inset: 0;
+  z-index: 0;
   margin: 0;
   padding: 0;
   border: 0;
@@ -19,8 +20,8 @@
 
 .panel {
   position: absolute;
+  z-index: 1;
   left: 50%;
-  bottom: var(--modal-panel-bottom);
   width: min(var(--action-menu-card-width), calc(100vw - var(--action-menu-card-margin) * 2));
   max-height: calc(
     100svh - var(--bottom-nav-offset) - var(--action-menu-card-gap-above-nav) - var(--space-24) -
@@ -44,9 +45,19 @@
   box-sizing: border-box;
 }
 
+/* Список «+» — зазор над BottomNav (Figma 817:1524) */
+.panelList {
+  bottom: var(--modal-panel-bottom);
+}
+
+/* Формы — вплотную к низу экрана, перекрывают нижнее меню */
+.panelForm,
+.panelSuccess {
+  bottom: 0;
+}
+
 .panelSuccess {
   top: auto;
-  bottom: var(--modal-panel-bottom);
   width: min(var(--action-menu-form-width), calc(100vw - var(--action-menu-form-margin) * 2));
   height: 140px;
   min-height: 140px;
@@ -64,11 +75,10 @@
 .panelForm {
   width: min(var(--action-menu-form-width), calc(100vw - var(--action-menu-form-margin) * 2));
   min-height: 322px;
-  max-height: calc(
-    100svh - var(--bottom-nav-offset) - var(--action-menu-card-gap-above-nav) - var(--space-24) -
-      env(safe-area-inset-bottom)
-  );
+  max-height: calc(100svh - var(--space-24) - env(safe-area-inset-bottom));
+  max-height: calc(100dvh - var(--space-24) - env(safe-area-inset-bottom));
   padding: var(--action-menu-form-padding);
+  padding-bottom: calc(var(--action-menu-form-padding) + env(safe-area-inset-bottom));
   border-radius: var(--radius-pill);
   background: var(--color-surface);
   backdrop-filter: none;

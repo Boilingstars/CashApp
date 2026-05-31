@@ -96,6 +96,10 @@
 
 .plusButtonOpen {
   position: fixed;
+}
+
+/* Только список «+» — поверх карточки; формы перекрывают нижнее меню */
+.plusButtonOpenElevated {
   z-index: calc(var(--z-action-menu) + 1);
 }
 

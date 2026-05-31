@@ -42,7 +42,9 @@ export function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const isActionMenuOpen = useActionMenuStore((state) => state.isOpen)
+  const activeScreen = useActionMenuStore((state) => state.activeScreen)
   const openActionMenu = useActionMenuStore((state) => state.open)
+  const isListMenuScreen = !isActionMenuOpen || activeScreen === 'list'
 
   if (!BOTTOM_NAV_PATHS.includes(pathname)) {
     return null
@@ -73,7 +75,11 @@ export function BottomNav() {
 
       <button
         type="button"
-        className={[styles.plusButton, isActionMenuOpen ? styles.plusButtonOpen : null]
+        className={[
+          styles.plusButton,
+          isActionMenuOpen ? styles.plusButtonOpen : null,
+          isActionMenuOpen && isListMenuScreen ? styles.plusButtonOpenElevated : null,
+        ]
           .filter(Boolean)
           .join(' ')}
         aria-label={isActionMenuOpen ? 'Меню открыто' : 'Добавить'}

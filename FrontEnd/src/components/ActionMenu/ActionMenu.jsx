@@ -99,6 +99,7 @@ export function ActionMenu() {
 
   const panelClassName = [
     styles.panel,
+    activeScreen === 'list' ? styles.panelList : null,
     isSuccessScreen ? styles.panelSuccess : null,
     isFormScreen ? styles.panelForm : null,
     isVisible ? styles.panelVisible : null,

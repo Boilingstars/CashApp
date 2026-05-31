@@ -8,12 +8,14 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .contentWithNav {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   padding-bottom: calc(var(--bottom-nav-offset) + env(safe-area-inset-bottom));
 }
 

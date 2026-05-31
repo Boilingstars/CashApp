@@ -2,10 +2,14 @@
   width: 100%;
   max-width: var(--layout-max-width);
   min-height: 100svh;
+  max-height: 100svh;
   margin: 0 auto;
   background: var(--color-background);
   padding-bottom: calc(var(--space-24) + env(safe-area-inset-bottom));
   box-sizing: border-box;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .header {
