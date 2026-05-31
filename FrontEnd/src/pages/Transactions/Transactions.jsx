@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
+import { CHAT_PDN_DEBT_LOAD_PROMPT } from '../../lib/constants/chatPdnPrompt.js'
 import iconCalendar from '../../assets/icons/icon_calendar.svg'
 import iconArrowRight from '../../assets/icons/icon_arrow_right.svg'
 import iconArrowUpRight from '../../assets/icons/icon_arrow-up-right.svg'
@@ -56,7 +57,9 @@ const Transactions = () => {
         <button
           type="button"
           className={styles.chatButton}
-          onClick={() => navigate('/chat')}
+          onClick={() =>
+            navigate('/chat', { state: { initialMessage: CHAT_PDN_DEBT_LOAD_PROMPT } })
+          }
         >
           <img
             className={styles.chatButtonIcon}

@@ -66,7 +66,7 @@ EMBEDDING_MODEL_NAME = env.str(
 )
 EMBEDDING_VECTOR_DIM = env.int('EMBEDDING_VECTOR_DIM', default=384)
 EMBEDDING_BATCH_SIZE = env.int('EMBEDDING_BATCH_SIZE', default=32)
-RAG_METADATA_VERSION = env.int('RAG_METADATA_VERSION', default=2)
+RAG_METADATA_VERSION = env.int('RAG_METADATA_VERSION', default=3)
 MAX_CHAT_MESSAGE_LENGTH = env.int('MAX_CHAT_MESSAGE_LENGTH', default=4000)
 CHAT_EMBEDDING_CACHE_TTL = env.int('CHAT_EMBEDDING_CACHE_TTL', default=604800)
 
@@ -138,7 +138,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_rq',
     'users',
-    'analytics',
+    'analytics.apps.AnalyticsConfig',
     'finance',
     'chat.apps.ChatConfig',
 ]

@@ -90,6 +90,17 @@ export const useTransactionsStore = create((set, get) => ({
     set({ transactions: items })
   },
 
+  /** Новая операция из POST /operations/create/ — в начало списка без полного refetch. */
+  prependOperation: (transaction) => {
+    if (!transaction?.id) return
+    set((state) => ({
+      transactions: [
+        transaction,
+        ...state.transactions.filter((tx) => String(tx.id) !== String(transaction.id)),
+      ],
+    }))
+  },
+
   setOperationType: (type) => {
     if (type === 'expense' || type === 'income') {
       set({ operationType: type })

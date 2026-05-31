@@ -21,6 +21,6 @@ urlpatterns = [
     path('w3489uhaL40ks/', admin.site.urls, name='admin'),
     path('auth/', include('users.urls', namespace='users')),
     path('api/', include('finance.urls', namespace='finance')),
-    path('analytics/', include('analytics.urls', namespace='analytics')),
+    path('api/analytics/', include('analytics.urls', namespace='analytics')),
     path('chat/', include('chat.urls', namespace='chat')),
 ]

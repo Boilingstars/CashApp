@@ -318,3 +318,14 @@
   max-width: 320px;
   margin: 0 auto;
 }
+
+.submitError {
+  margin: 0;
+  padding: 0 var(--space-6);
+  font-family: var(--font-brand);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-danger);
+  text-align: center;
+}

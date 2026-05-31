@@ -4,6 +4,7 @@ import { Check } from 'lucide-react'
 
 import { BackButton } from '../../shared/ui/BackButton/BackButton.jsx'
 import { GlassSelect } from '../../shared/ui/GlassSelect/GlassSelect.jsx'
+import { submitNewIncome } from '../../lib/actionMenu/submitNewIncome.js'
 import { useAccountsStore } from '../../stores/useAccountsStore.js'
 
 import styles from './ActionMenuForm.module.css'
@@ -16,9 +17,10 @@ function formatAmountInput(raw) {
 
 export function ActionMenuNewIncome({ isInteractive = true, onBack, onConfirm }) {
   const products = useAccountsStore((state) => state.products)
-  const updateProduct = useAccountsStore((state) => state.updateProduct)
   const [amount, setAmount] = useState('')
   const [accountId, setAccountId] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
   useEffect(() => {
     if (accountId || !products.length) return
@@ -38,24 +40,24 @@ export function ActionMenuNewIncome({ isInteractive = true, onBack, onConfirm })
     setAmount(formatAmountInput(event.target.value))
   }
 
-  const handleConfirm = () => {
-    if (!isInteractive) return
+  const handleConfirm = async () => {
+    if (!isInteractive || isSubmitting) return
 
-    const numericAmount = Number(amount.replace(/\s/g, ''))
-    if (!accountId || !numericAmount || numericAmount <= 0) return
+    setSubmitError(null)
+    setIsSubmitting(true)
+    const result = await submitNewIncome({ amount, accountId })
+    setIsSubmitting(false)
 
-    const product = products.find((item) => item.id === accountId)
-    if (!product) return
-
-    updateProduct({
-      id: accountId,
-      amount: (Number(product.amount) || 0) + numericAmount,
-    })
+    if (!result.ok) {
+      setSubmitError(result.error)
+      return
+    }
 
     onConfirm?.()
   }
 
-  const isConfirmDisabled = !isInteractive || !amount.replace(/\s/g, '')
+  const isConfirmDisabled =
+    !isInteractive || isSubmitting || !amount.replace(/\s/g, '') || !accountId
 
   return (
     <div className={styles.root}>
@@ -85,6 +87,12 @@ export function ActionMenuNewIncome({ isInteractive = true, onBack, onConfirm })
           onChange={handleAmountChange}
         />
       </div>
+
+      {submitError ? (
+        <p className={styles.submitError} role="alert">
+          {submitError}
+        </p>
+      ) : null}
 
       <div className={styles.fieldSection}>
         <p className={styles.fieldLabel}>Счет</p>

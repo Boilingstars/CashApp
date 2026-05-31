@@ -29,6 +29,11 @@ FOOD_QUERY_KEYWORDS = (
     'макдонald', 'kfc', 'суши', 'кофе', 'бар ',
 )
 
+CREDIT_QUERY_KEYWORDS = (
+    'кредит', 'кредитк', 'долг', 'займ', 'ипотек', 'рассроч', 'долгов',
+    'нагрузк', 'dbi', 'платеж по кредит', 'погаш', 'задолжен', 'процент по кредит',
+)
+
 # Подстроки в названиях категорий/сервисов из БД
 FOOD_CATEGORY_HINTS = (
     'кафе', 'продукт', 'ресторан', 'еда', 'фастфуд', 'доставк', 'супермаркет',
@@ -73,6 +78,9 @@ def _payment_chunk_text(payment: UpcomingPayment) -> str:
 
 
 def _operation_metadata(operation: Operation) -> dict:
+    is_credit_account = bool(
+        operation.account and operation.account.product_type in CREDIT_PRODUCT_TYPES
+    )
     return {
         'source': 'operation',
         'operation_id': operation.id,
@@ -81,7 +89,7 @@ def _operation_metadata(operation: Operation) -> dict:
         'category_name': operation.category.name if operation.category else '',
         'service_name': operation.service.name if operation.service else '',
         'note': (operation.note or '')[:120],
-        'is_credit': False,
+        'is_credit': is_credit_account,
     }
 
 
@@ -111,6 +119,39 @@ def is_spending_query(query: str) -> bool:
 def is_food_query(query: str) -> bool:
     q = query.lower()
     return any(hint in q for hint in FOOD_QUERY_KEYWORDS)
+
+
+def is_credit_query(query: str) -> bool:
+    q = query.lower()
+    return any(hint in q for hint in CREDIT_QUERY_KEYWORDS)
+
+
+def build_dbi_chunk(user_id: int) -> dict | None:
+    from analytics.services import get_dbi_for_user
+
+    dbi = get_dbi_for_user(user_id)
+    if dbi is None:
+        return None
+
+    text = (
+        f'Кредитный индекс (долговая нагрузка) за {dbi.month:02d}.{dbi.year}: '
+        f'{dbi.indicator_percent}% от месячного дохода. '
+        f'Платежи по кредитам за месяц: {dbi.credit_payments} RUB. '
+        f'Доход за месяц: {dbi.income_total} RUB. '
+        f'Формула: платежи по кредитам / доход.'
+    )
+    return {
+        'chunk_id': f'{user_id}:dbi:{dbi.id}',
+        'text': text,
+        'metadata': {
+            'source': 'debt_burden_indicator',
+            'dbi_id': dbi.id,
+            'year': dbi.year,
+            'month': dbi.month,
+            'indicator': str(dbi.indicator),
+            'is_credit': True,
+        },
+    }
 
 
 def detect_query_period(query: str) -> tuple[date, date, str] | None:
@@ -147,6 +188,9 @@ def resolve_query_period(query: str) -> tuple[date, date, str] | None:
     if is_spending_query(query) or is_food_query(query):
         today = timezone.now().date()
         return today - timedelta(days=30), today, 'default_month'
+    if is_credit_query(query):
+        today = timezone.now().date()
+        return date(today.year, today.month, 1), today, 'calendar_month'
     return None
 
 
@@ -167,6 +211,10 @@ def _operation_matches_food_topic(chunk: dict) -> bool:
 
 
 def _filter_operations_by_topic(chunks: list[dict], query: str) -> list[dict]:
+    if is_credit_query(query):
+        credit_ops = [c for c in chunks if c.get('metadata', {}).get('is_credit')]
+        if credit_ops:
+            return credit_ops
     if is_food_query(query):
         matched = [c for c in chunks if _operation_matches_food_topic(c)]
         if matched:
@@ -220,6 +268,10 @@ def build_all_user_chunks(user_id: int) -> list[dict]:
                 'metadata': _operation_metadata(operation),
             }
         )
+
+    dbi_chunk = build_dbi_chunk(user_id)
+    if dbi_chunk:
+        chunks.append(dbi_chunk)
 
     return chunks
 
@@ -279,6 +331,11 @@ def _db_fallback_chunks(user_id: int, query: str) -> list[dict]:
 
     if is_spending_query(query) or is_food_query(query):
         return _merge_chunks(operations, products[:3])
+
+    if is_credit_query(query):
+        dbi_chunks = [c for c in chunks if c['metadata']['source'] == 'debt_burden_indicator']
+        credit_products = [c for c in products if c['metadata'].get('is_credit')]
+        return _merge_chunks(dbi_chunks, credit_products, operations, products[:2])
 
     return _merge_chunks(products, payments, operations)
 
@@ -373,6 +430,16 @@ def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
     if is_spending_query(query) or is_food_query(query):
         # Для вопросов о тратах — операции в приоритете, не все регулярные платежи
         merged = _merge_chunks(relevant_operations, vector_hits, product_chunks[:3])
+    elif is_credit_query(query):
+        dbi_chunks = fetch_user_chunks_by_source(user_id, 'debt_burden_indicator')
+        if not dbi_chunks:
+            from analytics.services import recalculate_dbi_for_user
+
+            recalculate_dbi_for_user(user_id, sync_rag=False)
+            dbi_chunk = build_dbi_chunk(user_id)
+            dbi_chunks = [dbi_chunk] if dbi_chunk else []
+        credit_products = [c for c in product_chunks if c.get('metadata', {}).get('is_credit')]
+        merged = _merge_chunks(dbi_chunks, credit_products, relevant_operations, vector_hits)
     elif period:
         merged = _merge_chunks(product_chunks, payment_chunks, relevant_operations, vector_hits)
     else:

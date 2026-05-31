@@ -62,6 +62,9 @@ services:
     container_name: postgres_db
     volumes:
       - postgres_data:/var/lib/postgresql
+      - ./docker/postgres/init-restore.sh:/docker-entrypoint-initdb.d/02-restore.sh:ro
+      # Раскомментируйте, когда положите db_backup.dump рядом с docker-compose.yml:
+      # - ./db_backup.dump:/docker-entrypoint-initdb.d/db_backup.dump:ro
     env_file:
       - .env
     environment:

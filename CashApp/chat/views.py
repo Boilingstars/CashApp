@@ -26,6 +26,11 @@ def _build_rag_context_block(chunks: list[dict]) -> str:
     ]
     if any(c.get('metadata', {}).get('source') == 'operation' for c in chunks):
         lines.append('Ниже — операции/траты с категориями. Суммируй и анализируй их при ответе.')
+    if any(c.get('metadata', {}).get('source') == 'debt_burden_indicator' for c in chunks):
+        lines.append(
+            'Ниже указан кредитный индекс (долговая нагрузка). '
+            'При вопросах о кредите обязательно ссылайся на эти цифры.'
+        )
     for chunk in chunks:
         lines.append(f'- {chunk["text"]}')
     return '\n'.join(lines)

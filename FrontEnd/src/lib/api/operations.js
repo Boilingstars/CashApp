@@ -29,6 +29,15 @@ export async function listOperations() {
   return allResults
 }
 
+/**
+ * POST /api/operations/create/
+ * @param {Record<string, unknown>} body
+ */
+export async function createOperation(body) {
+  const { data } = await apiClient.post('/operations/create/', body)
+  return data
+}
+
 /** GET /api/operations/ — raw первой страницы для debug на /profile. */
 export async function getOperations() {
   const response = await apiClient.get('/operations/')

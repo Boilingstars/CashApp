@@ -1,8 +1,6 @@
 /**
- * TEMP: adapter { id, name } → GlassSelect options.
- * value = name (не backend id) — submitNewExpense и draft пока хранят
- * category_name / custom_service_name строками.
- * TODO: после интеграции POST /api/operations/ перейти на value = String(id).
+ * Adapter { id, name } → GlassSelect options.
+ * value = name; id резолвится в buildCreateOperationBody при POST /operations/create/.
  */
 export function mapReferenceToSelectOptions(items) {
   if (!Array.isArray(items)) return []

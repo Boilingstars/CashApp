@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import iconAdd from '../../assets/icons/icon-add.svg'
 import iconCopy from '../../assets/icons/icon-copy.svg'
@@ -122,6 +122,8 @@ function ChatMessage({ message, isActive, onToggleActive }) {
 
 export function Chat() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const initialMessageConsumedRef = useRef(false)
 
   const [messages, setMessages] = useState([WELCOME_MESSAGE])
   const [inputValue, setInputValue] = useState('')
@@ -207,6 +209,17 @@ export function Chat() {
     },
     [isSending, sessionId],
   )
+
+  useEffect(() => {
+    if (initialMessageConsumedRef.current) return
+
+    const text = location.state?.initialMessage?.trim()
+    if (!text) return
+
+    initialMessageConsumedRef.current = true
+    navigate('/chat', { replace: true, state: null })
+    submitMessage(text)
+  }, [location.state, navigate, submitMessage])
 
   const handleQuickQuestion = (question) => {
     submitMessage(question)

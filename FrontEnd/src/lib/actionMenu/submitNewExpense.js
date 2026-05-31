@@ -1,52 +1,61 @@
+import { createOperation } from '../api/operations.js'
+import { buildExpenseOperationBody } from '../operations/buildCreateOperationBody.js'
+import { applyOperationCreateResult } from '../operations/applyOperationCreateResult.js'
 import { useAccountsStore } from '../../stores/useAccountsStore.js'
 import { useActionMenuStore } from '../../stores/useActionMenuStore.js'
-import { useTransactionsStore } from '../../stores/useTransactionsStore.js'
+import { useReferenceStore } from '../../stores/useReferenceStore.js'
 
-/** TEMP: сохранение траты в zustand до backend API */
-export function submitNewExpense() {
+function extractApiError(err) {
+  const data = err.response?.data
+  if (typeof data === 'string') return data
+  if (data?.error) return String(data.error)
+  if (data?.detail) return String(data.detail)
+  if (data?.message) return String(data.message)
+  return err.message || 'Не удалось сохранить трату'
+}
+
+/**
+ * POST /api/operations/create/ + обновление store из ответа.
+ * @returns {Promise<{ ok: true } | { ok: false, error: string }>}
+ */
+export async function submitNewExpense() {
   const draft = useActionMenuStore.getState().newExpenseDraft
-  if (!draft) return false
-
-  const numericAmount = Number(draft.amount.replace(/\s/g, ''))
-  if (!numericAmount || numericAmount <= 0) return false
-  if (!draft.accountId || !draft.customServiceName || !draft.date || !draft.categoryName) {
-    return false
-  }
+  if (!draft) return { ok: false, error: 'Нет данных формы' }
 
   const products = useAccountsStore.getState().products
   const product = products.find((item) => item.id === draft.accountId)
-  if (!product) return false
+  if (!product) return { ok: false, error: 'Счёт не найден' }
 
-  useAccountsStore.getState().updateProduct({
-    id: draft.accountId,
-    amount: (Number(product.amount) || 0) - numericAmount,
+  const { categories, services, usedFallback } = useReferenceStore.getState()
+
+  const body = buildExpenseOperationBody({
+    draft,
+    categories,
+    services,
+    usedFallback,
+    currencyCode: product.currency_code || 'RUB',
   })
 
-  const accountSuffix = product.account_number
-    ? String(product.account_number).slice(-4)
-    : '0000'
-
-  const now = new Date()
-  const [year, month, day] = draft.date.split('-').map(Number)
-  const operationDate = new Date(year, month - 1, day, now.getHours(), now.getMinutes())
-
-  const newTransaction = {
-    id: `tx_${Date.now()}`,
-    service_name: null,
-    custom_service_name: draft.customServiceName,
-    category_name: draft.categoryName,
-    currency_code: product.currency_code || 'RUB',
-    amount: numericAmount,
-    operation: 'expense',
-    operation_date: operationDate.toISOString(),
-    account_number: `**** ${accountSuffix}`,
+  if (!body) {
+    return { ok: false, error: 'Заполните сумму, категорию, счёт, магазин и дату' }
   }
 
-  useTransactionsStore.getState().setTransactions([
-    newTransaction,
-    ...useTransactionsStore.getState().transactions,
-  ])
+  try {
+    const created = await createOperation(body)
 
-  useActionMenuStore.getState().showNewExpenseSuccess()
-  return true
+    applyOperationCreateResult(created, {
+      patchClient: usedFallback
+        ? {
+            category_name: draft.categoryName || created.category?.name,
+            custom_service_name:
+              draft.customServiceName || created.service?.name || created.note,
+          }
+        : undefined,
+    })
+
+    useActionMenuStore.getState().showNewExpenseSuccess()
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: extractApiError(err) }
+  }
 }

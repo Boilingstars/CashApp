@@ -28,6 +28,12 @@ EOF
 echo "==> Running migrations..."
 python manage.py migrate --noinput
 
+echo "==> Seeding credit card payments (current month)..."
+python manage.py seed_credit_operations || echo "WARNING: seed_credit_operations failed."
+
+echo "==> Recalculating debt burden indicators..."
+python manage.py recalculate_dbi --all || echo "WARNING: recalculate_dbi failed."
+
 echo "==> Initializing Redis index..."
 python manage.py init_redis_index --recreate-if-dim-changed || echo "WARNING: Redis index init failed."
 

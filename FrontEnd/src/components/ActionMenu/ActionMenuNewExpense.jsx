@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Check, ChevronRight } from 'lucide-react'
@@ -24,6 +24,8 @@ function formatAmountInput(raw) {
 export function ActionMenuNewExpense({ isInteractive = true, onBack }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
   const products = useAccountsStore((state) => state.products)
   const draft = useActionMenuStore((state) => state.newExpenseDraft)
   const patchNewExpenseDraft = useActionMenuStore((state) => state.patchNewExpenseDraft)
@@ -109,14 +111,21 @@ export function ActionMenuNewExpense({ isInteractive = true, onBack }) {
     navigate('/transactions/filter/date-picker?from=newExpense')
   }
 
-  const handleConfirm = () => {
-    if (!isInteractive) return
-    submitNewExpense()
+  const handleConfirm = async () => {
+    if (!isInteractive || isSubmitting) return
+    setSubmitError(null)
+    setIsSubmitting(true)
+    const result = await submitNewExpense()
+    setIsSubmitting(false)
+    if (!result.ok) {
+      setSubmitError(result.error)
+    }
   }
 
-  const isNextDisabled = !isInteractive || !amount.replace(/\s/g, '') || !categoryName
+  const isNextDisabled = !isInteractive || isSubmitting || !amount.replace(/\s/g, '') || !categoryName
   const isConfirmDisabled =
     !isInteractive ||
+    isSubmitting ||
     !amount.replace(/\s/g, '') ||
     !accountId ||
     !customServiceName ||
@@ -138,6 +147,12 @@ export function ActionMenuNewExpense({ isInteractive = true, onBack }) {
             <Check className={styles.confirmIcon} aria-hidden="true" />
           </button>
         </header>
+
+        {submitError ? (
+          <p className={styles.submitError} role="alert">
+            {submitError}
+          </p>
+        ) : null}
 
         <div className={styles.metaGrid}>
           <p className={styles.metaLabel}>Счет</p>
@@ -223,6 +238,12 @@ export function ActionMenuNewExpense({ isInteractive = true, onBack }) {
           onChange={handleAmountChange}
         />
       </div>
+
+      {submitError ? (
+        <p className={styles.submitError} role="alert">
+          {submitError}
+        </p>
+      ) : null}
 
       <div className={styles.fieldSection}>
         <p className={styles.fieldLabel}>Категория</p>
