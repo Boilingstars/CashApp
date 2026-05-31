@@ -313,11 +313,17 @@ def sync_user_financial_chunks(user_id: int):
     redis_conn = get_redis()
     redis_conn.set(f'rag_synced:{user_id}', str(stored))
     redis_conn.set(f'rag_meta_version:{user_id}', str(settings.RAG_METADATA_VERSION))
+    redis_conn.delete(f'rag_sync_queued:{user_id}')
     logger.info('RAG index synced for user %s (%s chunks in Redis)', user_id, stored)
 
 
-def ensure_user_chunks(user_id: int):
+def ensure_user_chunks(user_id: int) -> bool:
+    """
+    Проверить актуальность Redis-индекса.
+    Если индекс устарел — ставит задачу в RQ и возвращает False (не блокирует HTTP).
+    """
     from .redis import count_user_chunks, get_redis
+    from .tasks import enqueue_user_rag_sync
 
     redis_conn = get_redis()
     synced_raw = redis_conn.get(f'rag_synced:{user_id}')
@@ -333,23 +339,29 @@ def ensure_user_chunks(user_id: int):
         and actual_count == db_count
         and meta_version == expected_version
     ):
-        return
+        return True
 
     logger.info(
-        'RAG resync user %s: redis=%s synced=%s db=%s meta=%s',
+        'RAG resync queued for user %s: redis=%s synced=%s db=%s meta=%s',
         user_id,
         actual_count,
         synced_count,
         db_count,
         meta_version,
     )
-    sync_user_financial_chunks(user_id)
+    queue_key = f'rag_sync_queued:{user_id}'
+    if redis_conn.set(queue_key, b'1', nx=True, ex=300):
+        enqueue_user_rag_sync(user_id)
+    return False
 
 
 def retrieve_rag_context(user_id: int, query: str) -> list[dict]:
     from .redis import fetch_user_chunks_by_source, search_similar_chunks
 
-    ensure_user_chunks(user_id)
+    index_ready = ensure_user_chunks(user_id)
+    if not index_ready:
+        logger.info('RAG index not ready for user %s, using DB fallback', user_id)
+        return _db_fallback_chunks(user_id, query)
 
     period = resolve_query_period(query)
     product_chunks = fetch_user_chunks_by_source(user_id, 'financial_product')

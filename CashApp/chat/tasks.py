@@ -33,5 +33,4 @@ def enqueue_user_rag_sync(user_id: int):
             failure_ttl=3600,
         )
     except Exception as exc:
-        logger.error('RQ enqueue failed for user %s, sync inline: %s', user_id, exc)
-        sync_user_rag_task(user_id)
+        logger.error('RQ enqueue failed for user %s: %s', user_id, exc)

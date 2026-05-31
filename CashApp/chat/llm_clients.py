@@ -8,4 +8,6 @@ def get_chat_client() -> OpenAI:
     return OpenAI(
         api_key=settings.LLM_API_KEY,
         base_url=settings.LLM_BASE_URL,
+        timeout=settings.LLM_REQUEST_TIMEOUT,
+        max_retries=settings.LLM_MAX_RETRIES,
     )

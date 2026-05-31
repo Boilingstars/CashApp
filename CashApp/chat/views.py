@@ -80,9 +80,13 @@ class ChatMessageView(APIView):
         context_block = _build_rag_context_block(rag_chunks)
         system_prompt = f'{base_prompt}\n\n{context_block}'
 
-        history = ChatMessage.objects.filter(session=session).order_by('created_at')
+        history_limit = getattr(settings, 'MAX_CHAT_HISTORY_MESSAGES', 20)
+        history = (
+            ChatMessage.objects.filter(session=session)
+            .order_by('-created_at')[:history_limit]
+        )
         messages = [{'role': 'system', 'content': system_prompt}]
-        for msg in history:
+        for msg in reversed(list(history)):
             messages.append({'role': msg.role, 'content': msg.content})
         messages.append({'role': 'user', 'content': content})
 
@@ -113,6 +117,14 @@ class ChatMessageView(APIView):
             user_message.delete()
             return Response({'error': str(exc)}, status=503)
         except Exception as exc:
+            exc_name = type(exc).__name__
+            if exc_name in ('APITimeoutError', 'TimeoutException', 'ReadTimeout'):
+                logger.error('LLM API timeout: %s', exc)
+                user_message.delete()
+                return Response(
+                    {'error': 'Нейросеть не ответила вовремя, попробуйте ещё раз'},
+                    status=504,
+                )
             logger.error('LLM API error: %s', exc)
             user_message.delete()
             return Response({'error': 'Ошибка при обращении к нейросети'}, status=502)
