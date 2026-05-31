@@ -85,10 +85,17 @@
 .panelModal {
   position: fixed;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  bottom: var(--modal-panel-bottom);
+  top: auto;
+  transform: translateX(-50%);
   width: min(var(--action-menu-card-width), calc(100vw - var(--action-menu-card-margin) * 2));
-  max-height: min(556px, calc(100svh - var(--space-32)));
+  max-height: min(
+    556px,
+    calc(
+      100svh - var(--bottom-nav-offset) - var(--action-menu-card-gap-above-nav) - var(--space-24) -
+        env(safe-area-inset-bottom)
+    )
+  );
   margin: 0;
   padding: var(--action-menu-card-padding);
   border: 0;
@@ -115,12 +122,12 @@
 @keyframes glassSelectModalIn {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-50% + 10px));
+    transform: translateX(-50%) translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -182,6 +189,6 @@
 
   .panelModal {
     animation: none;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
   }
 }

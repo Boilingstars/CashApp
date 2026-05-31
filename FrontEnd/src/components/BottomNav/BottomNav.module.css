@@ -62,7 +62,11 @@
 
 .plusButton {
   position: absolute;
-  right: 34px;
+  /* Figma: right 34px; при сближении pill — сдвиг к правому краю (меньше right) */
+  right: max(
+    var(--bottom-nav-plus-right-min),
+    min(var(--bottom-nav-plus-right-default), calc(50vw - var(--bottom-nav-plus-offset)))
+  );
   bottom: calc(18px + env(safe-area-inset-bottom));
   z-index: 1;
   width: 62px;
@@ -78,7 +82,9 @@
   box-shadow: none;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.2s ease;
+  transition:
+    right 0.2s ease,
+    transform 0.2s ease;
 }
 
 .plusIcon {

@@ -24,7 +24,9 @@
   --font-size-12: 12px;
   --font-size-16: 16px;
   --font-size-20: 20px;
+  --font-size-18: 18px;
   --font-size-22: 22px;
+  --font-size-32: 32px;
   --font-size-36: 36px;
   --line-height-normal: normal;
 
@@ -41,7 +43,9 @@
   --space-16: 16px;
   --space-18: 18px;
   --space-20: 20px;
+  --space-22: 22px;
   --space-24: 24px;
+  --space-42: 42px;
   --space-32: 32px;
 
   /* Shadows */
@@ -61,17 +65,23 @@
   --page-header-padding-top: 48px;
   --layout-max-width: 440px;
   --bottom-nav-offset: calc(var(--control-height-lg) + 18px);
+  /* BottomNav «+»: половина pill (102) + зазор (14) + ширина кнопки (62) */
+  --bottom-nav-plus-offset: 178px;
+  --bottom-nav-plus-right-default: 34px;
+  --bottom-nav-plus-right-min: 12px;
   --z-bottom-nav: 100;
   --z-action-menu: 110;
+  --z-onboarding: 120;
   --action-menu-duration: 0.22s;
   --action-menu-overlay-bg: transparent;
   --action-menu-card-width: 354px;
   --action-menu-card-margin: 43px;
-  --action-menu-card-gap-above-nav: 41px;
+  --action-menu-card-gap-above-nav: 22px;
   --action-menu-card-bottom: calc(
     18px + var(--control-height-lg) + var(--action-menu-card-gap-above-nav) +
       env(safe-area-inset-bottom)
   );
+  --modal-panel-bottom: var(--action-menu-card-bottom);
   --action-menu-card-padding: 30px;
   --action-menu-row-height: 49px;
   --action-menu-row-gap: 22px;
@@ -80,7 +90,6 @@
   --action-menu-form-width: 404px;
   --action-menu-form-margin: 18px;
   --action-menu-form-padding: 18px;
-  --action-menu-success-top: 318px;
   /* Figma 817:1525 — frosted glass: полупрозрачные слои + blur */
   --action-menu-card-bg:
     linear-gradient(0deg, rgba(245, 245, 245, 0.6) 0%, rgba(245, 245, 245, 0.6) 100%),
@@ -101,4 +110,5 @@
   /* Gradients & accents */
   --gradient-card: linear-gradient(90deg, #243748 0%, #4b749f 100%);
   --color-accent-green: #66d992;
+  --color-danger: #dd2929;
 }

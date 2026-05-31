@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 import { getAccessToken, getTokens } from '../lib/api/auth.js'
+import { useOnboardingStore } from './useOnboardingStore.js'
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -24,6 +25,7 @@ export const useAuthStore = create((set, get) => ({
       }
 
       set({ user: loginData.user, isLoading: false, error: null })
+      useOnboardingStore.getState().open()
     } catch (err) {
       const message =
         err.response?.data?.message || err.message || 'Failed to fetch user'

@@ -4,8 +4,10 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { useAccountsStore } from '../../stores/useAccountsStore.js'
 import { useAuthStore } from '../../stores/useAuthStore.js'
 import { useTransactionsStore } from '../../stores/useTransactionsStore.js'
+import { useOnboardingStore } from '../../stores/useOnboardingStore.js'
 import { ActionMenu } from '../ActionMenu/ActionMenu.jsx'
 import { BottomNav } from '../BottomNav/BottomNav.jsx'
+import { Onboarding } from '../Onboarding/Onboarding.jsx'
 
 import styles from './AppShell.module.css'
 
@@ -20,6 +22,8 @@ export function AppShell({ withBottomNav }) {
 
   const fetchOperations = useTransactionsStore((state) => state.fetchOperations)
   const transactionsLoaded = useTransactionsStore((state) => state.transactionsLoaded)
+
+  const isOnboardingActive = useOnboardingStore((state) => state.isActive)
 
   useEffect(() => {
     let cancelled = false
@@ -71,8 +75,9 @@ export function AppShell({ withBottomNav }) {
   return (
     <div className={styles.root}>
       <main className={mainClassName}>{mainContent}</main>
-      <ActionMenu />
-      {withBottomNav ? <BottomNav /> : null}
+      {!isOnboardingActive ? <ActionMenu /> : null}
+      {withBottomNav && !isOnboardingActive ? <BottomNav /> : null}
+      {isOnboardingActive ? <Onboarding /> : null}
     </div>
   )
 }

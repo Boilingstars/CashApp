@@ -12,7 +12,6 @@ import { TransactionTag } from './pages/TransactionTag/TransactionTag.jsx'
 import { TransactionCategory } from './pages/Transactions/Category/TransactionCategory.jsx'
 import { Chat } from './pages/Chat/Chat.jsx'
 import { ChatHistory } from './pages/ChatHistory/ChatHistory.jsx'
-import { Settings } from './pages/Settings/Settings.jsx'
 import { Profile } from './pages/Profile/Profile.jsx'
 import { ProductEdit } from './pages/ProductEdit/ProductEdit.jsx'
 
@@ -33,7 +32,7 @@ function App() {
       </Route>
 
       <Route element={<NoBottomNavLayout />}>
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings" element={<Profile />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/products/:id" element={<ProductEdit />} />
         <Route path="/transactions/stats" element={<TransactionStats />} />
@@ -49,7 +48,7 @@ function App() {
         />
         <Route path="/chat/history" element={<ChatHistory />} />
         <Route path="/chat" element={<Chat />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile" element={<Navigate to="/settings" replace />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

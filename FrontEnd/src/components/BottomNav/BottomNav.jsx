@@ -30,7 +30,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'tasks',
-    label: 'Задачи',
+    label: 'Профиль',
     to: '/settings',
     icon: iconTasks,
     isActive: (pathname) =>

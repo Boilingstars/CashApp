@@ -20,7 +20,7 @@
 .panel {
   position: absolute;
   left: 50%;
-  bottom: var(--action-menu-card-bottom);
+  bottom: var(--modal-panel-bottom);
   width: min(var(--action-menu-card-width), calc(100vw - var(--action-menu-card-margin) * 2));
   max-height: calc(
     100svh - var(--bottom-nav-offset) - var(--action-menu-card-gap-above-nav) - var(--space-24) -
@@ -45,8 +45,8 @@
 }
 
 .panelSuccess {
-  top: var(--action-menu-success-top);
-  bottom: auto;
+  top: auto;
+  bottom: var(--modal-panel-bottom);
   width: min(var(--action-menu-form-width), calc(100vw - var(--action-menu-form-margin) * 2));
   height: 140px;
   min-height: 140px;
