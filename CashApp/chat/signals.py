@@ -12,12 +12,9 @@ logger = logging.getLogger(__name__)
 def _schedule_sync(user_id: int):
     if settings.RAG_BACKEND != 'redis_vector':
         return
-    from .indexing import sync_user_financial_chunks
+    from .tasks import enqueue_user_rag_sync
 
-    try:
-        sync_user_financial_chunks(user_id)
-    except Exception as exc:
-        logger.error('RAG sync failed for user %s: %s', user_id, exc)
+    enqueue_user_rag_sync(user_id)
 
 
 @receiver(post_save, sender=FinancialProduct)

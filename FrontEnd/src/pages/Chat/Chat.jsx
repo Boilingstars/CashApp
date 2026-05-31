@@ -12,6 +12,7 @@ import iconSendMessage from '../../assets/icons/icons_send_massage.svg'
 import iconShare from '../../assets/icons/icon-share.svg'
 import { sendChatMessage } from '../../lib/api/chat.js'
 import { quickQuestions } from '../../lib/mocks/chatMocks.js'
+import { ChatMarkdown } from '../../lib/utils/formatChatMarkdown.jsx'
 import { BackButton } from '../../shared/ui/BackButton/BackButton.jsx'
 
 import styles from './Chat.module.css'
@@ -58,6 +59,12 @@ function ChatMessage({ message, isActive, onToggleActive }) {
     onToggleActive(message.id)
   }
 
+  const handleBubbleKeyDown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    handleBubbleClick()
+  }
+
   return (
     <li
       className={`${styles.messageRow} ${isUser ? styles.messageRowUser : styles.messageRowAi} ${isActive ? styles.messageRowActive : ''}`}
@@ -71,9 +78,15 @@ function ChatMessage({ message, isActive, onToggleActive }) {
         )}
 
         <div className={styles.messageBody}>
-          <button type="button" className={styles.bubble} onClick={handleBubbleClick}>
-            {message.text}
-          </button>
+          <div
+            role="button"
+            tabIndex={0}
+            className={`${styles.bubble} ${isUser ? styles.bubbleUser : styles.bubbleAi}`}
+            onClick={handleBubbleClick}
+            onKeyDown={handleBubbleKeyDown}
+          >
+            {isUser ? message.text : <ChatMarkdown text={message.text} styles={styles} />}
+          </div>
 
           <div className={styles.actions} aria-label="Действия с сообщением">
             <button type="button" className={styles.actionButton} aria-label="Нравится">

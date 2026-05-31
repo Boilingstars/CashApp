@@ -10,7 +10,7 @@
   top: 0;
   z-index: 60;
   background: var(--color-background);
-  padding: 76px 18px 12px;
+  padding: var(--page-header-padding-top) 18px 12px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -33,7 +33,7 @@
     Даём странице докрутиться так, чтобы заголовок последней секции мог
     дойти до шапки (sticky header). Добавляем запас примерно на высоту карточки.
   */
-  height: calc(76px + var(--control-height-sm) + 12px + 82px);
+  height: calc(var(--page-header-padding-top) + var(--control-height-sm) + 12px + 82px);
 }
 
 .overallCard {

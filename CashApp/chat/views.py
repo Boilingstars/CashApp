@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .concurrency import LLMQueueFullError, LLMRateLimitError, acquire_llm_slot, release_llm_slot
 from .indexing import retrieve_rag_context
 from .llm_clients import get_chat_client
 from .models import ChatMessage, ChatSession
@@ -94,7 +95,9 @@ class ChatMessageView(APIView):
             content=content,
         )
 
+        llm_token = None
         try:
+            llm_token = acquire_llm_slot(user.id)
             client = get_chat_client()
             response = client.chat.completions.create(
                 model=settings.LLM_CHAT_MODEL,
@@ -103,10 +106,18 @@ class ChatMessageView(APIView):
                 stream=False,
             )
             assistant_content = response.choices[0].message.content
+        except LLMRateLimitError as exc:
+            user_message.delete()
+            return Response({'error': str(exc)}, status=429)
+        except LLMQueueFullError as exc:
+            user_message.delete()
+            return Response({'error': str(exc)}, status=503)
         except Exception as exc:
             logger.error('LLM API error: %s', exc)
             user_message.delete()
             return Response({'error': 'Ошибка при обращении к нейросети'}, status=502)
+        finally:
+            release_llm_slot(llm_token)
 
         assistant_message = ChatMessage.objects.create(
             session=session,

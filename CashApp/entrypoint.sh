@@ -38,10 +38,23 @@ echo "==> Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo "==> Starting gunicorn..."
+WORKERS="${GUNICORN_WORKERS:-4}"
+THREADS="${GUNICORN_THREADS:-1}"
+TIMEOUT="${GUNICORN_TIMEOUT:-300}"
+echo "Gunicorn: workers=${WORKERS} threads=${THREADS} timeout=${TIMEOUT}"
+
+if [ "$THREADS" -gt 1 ]; then
+  WORKER_CLASS="gthread"
+else
+  WORKER_CLASS="sync"
+fi
+
 exec gunicorn CashApp.wsgi:application \
     --bind 0.0.0.0:8000 \
-    --workers 2 \
-    --timeout 300 \
+    --workers "$WORKERS" \
+    --threads "$THREADS" \
+    --worker-class "$WORKER_CLASS" \
+    --timeout "$TIMEOUT" \
     --preload \
     --access-logfile - \
     --error-logfile -

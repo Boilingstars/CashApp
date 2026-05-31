@@ -58,6 +58,7 @@
   --control-height-lg: 62px;
 
   /* Layout */
+  --page-header-padding-top: 48px;
   --layout-max-width: 440px;
   --bottom-nav-offset: calc(var(--control-height-lg) + 18px);
   --z-bottom-nav: 100;

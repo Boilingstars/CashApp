@@ -11,7 +11,7 @@
   top: 0;
   z-index: 60;
   background: var(--color-background);
-  padding: 76px 18px 12px;
+  padding: var(--page-header-padding-top) 18px 12px;
 }
 
 .headerInner {
@@ -142,7 +142,7 @@
 .notFound {
   min-height: 100dvh;
   background: var(--color-background);
-  padding: 76px 18px 24px;
+  padding: var(--page-header-padding-top) 18px 24px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

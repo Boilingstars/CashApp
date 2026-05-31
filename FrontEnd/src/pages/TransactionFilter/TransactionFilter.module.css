@@ -15,7 +15,7 @@
   z-index: 20;
   flex-shrink: 0;
   background: var(--color-background);
-  padding: 76px var(--space-18) var(--space-12);
+  padding: var(--page-header-padding-top) var(--space-18) var(--space-12);
 }
 
 .headerInner {

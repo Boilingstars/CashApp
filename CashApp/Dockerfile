@@ -26,7 +26,7 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 COPY . .
 
-RUN chmod +x /app/entrypoint.sh && \
+RUN chmod +x /app/entrypoint.sh /app/entrypoint-worker.sh && \
     adduser --disabled-password --gecos '' django-user && \
     chown -R django-user:django-user /app
 

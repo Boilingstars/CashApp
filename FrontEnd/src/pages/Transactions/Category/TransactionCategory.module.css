@@ -15,7 +15,7 @@
   align-items: center;
   gap: var(--space-16);
   width: calc(100% - var(--space-18) * 2);
-  margin: 76px var(--space-18) 0;
+  margin: var(--page-header-padding-top) var(--space-18) 0;
   padding: 22px;
   border-radius: var(--radius-pill);
   background: var(--gradient-card);

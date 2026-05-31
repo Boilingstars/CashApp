@@ -9,7 +9,7 @@
 }
 
 .header {
-  padding: 76px var(--space-18) 0;
+  padding: var(--page-header-padding-top) var(--space-18) 0;
 }
 
 .headerTop {

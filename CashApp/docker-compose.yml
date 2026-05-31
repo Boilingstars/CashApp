@@ -21,6 +21,27 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  worker:
+    build: .
+    container_name: django_worker
+    entrypoint: ["/app/entrypoint-worker.sh"]
+    volumes:
+      - .:/app
+      - model_cache:/app/.cache
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+    restart: unless-stopped
+
   frontend:
     build:
       context: ../FrontEnd

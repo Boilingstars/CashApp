@@ -70,6 +70,20 @@ RAG_METADATA_VERSION = env.int('RAG_METADATA_VERSION', default=2)
 MAX_CHAT_MESSAGE_LENGTH = env.int('MAX_CHAT_MESSAGE_LENGTH', default=4000)
 CHAT_EMBEDDING_CACHE_TTL = env.int('CHAT_EMBEDDING_CACHE_TTL', default=604800)
 
+# Ограничение нагрузки на LLM API (DeepSeek / Artemox)
+LLM_MAX_CONCURRENT_REQUESTS = env.int('LLM_MAX_CONCURRENT_REQUESTS', default=3)
+LLM_SLOT_WAIT_SECONDS = env.int('LLM_SLOT_WAIT_SECONDS', default=90)
+LLM_USER_COOLDOWN_SECONDS = env.int('LLM_USER_COOLDOWN_SECONDS', default=3)
+LLM_SEMAPHORE_TTL_SECONDS = env.int('LLM_SEMAPHORE_TTL_SECONDS', default=600)
+
+# Gunicorn (передаётся через entrypoint.sh)
+GUNICORN_WORKERS = env.int('GUNICORN_WORKERS', default=4)
+GUNICORN_THREADS = env.int('GUNICORN_THREADS', default=1)
+GUNICORN_TIMEOUT = env.int('GUNICORN_TIMEOUT', default=300)
+
+# RQ — фоновые задачи (индексация RAG)
+RQ_RAG_JOB_TIMEOUT = env.int('RQ_RAG_JOB_TIMEOUT', default=600)
+
 # Дефолтный промпт
 DEFAULT_SYSTEM_PROMPT = (
     "Ты — доброжелательный финансовый советник приложения CashApp. "
@@ -90,6 +104,24 @@ REDIS_HOST = env.str('REDIS_HOST', default='localhost')
 REDIS_PORT = env.int('REDIS_PORT', default=6379)
 REDIS_PASSWORD = env.str('REDIS_PASSWORD', default='')
 REDIS_DB = env.int('REDIS_DB', default=0)
+REDIS_RQ_DB = env.int('REDIS_RQ_DB', default=1)
+
+RQ_QUEUES = {
+    'default': {
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
+        'PASSWORD': REDIS_PASSWORD,
+        'DB': REDIS_RQ_DB,
+        'DEFAULT_TIMEOUT': RQ_RAG_JOB_TIMEOUT,
+    },
+    'rag': {
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
+        'PASSWORD': REDIS_PASSWORD,
+        'DB': REDIS_RQ_DB,
+        'DEFAULT_TIMEOUT': RQ_RAG_JOB_TIMEOUT,
+    },
+}
 
 # Application definition
 
@@ -101,6 +133,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_rq',
     'users',
     'analytics',
     'finance',
@@ -154,6 +187,8 @@ DATABASES = {
         'PASSWORD': env('POSTGRES_PASSWORD', default='qwerty'),
         'HOST': env('POSTGRES_HOST', default='localhost'),
         'PORT': '5432',
+        'CONN_MAX_AGE': env.int('DB_CONN_MAX_AGE', default=60),
+        'CONN_HEALTH_CHECKS': True,
     }
 }
 
